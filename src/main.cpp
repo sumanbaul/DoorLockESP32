@@ -1,11 +1,4 @@
-#define THINGSBOARD_ENABLE_DYNAMIC 0
-#include <Arduino.h>
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <WiFiClientSecure.h>
-#include <ThingsBoard.h>
-#include <L293D.h>
-
+#include "constants.h"
 /*
 
   Project: Main door lock
@@ -13,93 +6,6 @@
   Developer: Suman Baul
 
 */
-
-// wifi configs
-#define WIFI_SSID "Home wifi"
-#define WIFI_PASSWORD "1123581321"
-
-const char *serverName = "https://automation.mindflo.in/esp-outputs-action.php?action=outputs_state&board=1";
-
-// thingsboard variables
-#define TOKEN "5jeTWUk1oxSHUlqnr1ol"        // "lf2p7b4pfltZghdVevqB"//"5jeTWUk1oxSHUlqnr1ol"
-char thingsboardServer[] = "192.168.0.108"; //"demo.thingsboard.io";
-constexpr uint16_t THINGSBOARD_PORT = 9232U;
-// #define THINGSBOARD_PORT 9232
-constexpr uint32_t MAX_MESSAGE_SIZE = 256U;
-// initialize thingsboard client
-WiFiClient espClient;
-
-// initialize thingsboard instance
-ThingsBoard tb(espClient, MAX_MESSAGE_SIZE);
-// the wifi radio's status
-int status = WL_IDLE_STATUS;
-
-// Attribute names for attribute request and attribute updates functionality
-
-constexpr char BLINKING_INTERVAL_ATTR[] = "blinkingInterval";
-constexpr char LED_MODE_ATTR[] = "ledMode";
-constexpr char LED_STATE_ATTR[] = "ledState";
-
-// LEDs
-const int PIN_GREEN = 22;
-const int PIN_RED = 23;
-const int PIN_BLUE = 21;
-const int LEDINBUILT = 2;
-
-//
-int flag = 0;
-
-// Statuses for subscribing to rpc
-bool subscribed = false;
-
-// handle led state and mode changes
-volatile bool attributesChanged = false;
-
-// LED modes: 0 - continious state, 1 - blinking
-volatile int ledMode = 0;
-
-// Current led state
-volatile bool ledState = false;
-
-// Settings for interval in blinking mode
-constexpr uint16_t BLINKING_INTERVAL_MS_MIN = 10U;
-constexpr uint16_t BLINKING_INTERVAL_MS_MAX = 60000U;
-volatile uint16_t blinkingInterval = 1000U;
-
-uint32_t previousStateChange;
-
-// For telemetry
-constexpr int16_t telemetrySendInterval = 2000U;
-uint32_t previousDataSend;
-
-// List of shared attributes for subscribing to their updates
-constexpr std::array<const char *, 2U> SHARED_ATTRIBUTES_LIST = {
-    LED_STATE_ATTR,
-    BLINKING_INTERVAL_ATTR};
-
-// List of client attributes for requesting them (Using to initialize device states)
-constexpr std::array<const char *, 1U> CLIENT_ATTRIBUTES_LIST = {
-    LED_MODE_ATTR};
-
-// Motors
-//  Update interval time set to 5 seconds
-const long interval = 5000;
-unsigned long previousMillis = 0;
-// Motor A
-int motor1Pin1 = 27;
-int motor1Pin2 = 26;
-int enable1Pin = 14;
-
-// Setting PWM properties
-const int freq = 30000;
-const int pwmChannel = 0;
-const int resolution = 8;
-int dutyCycle = 255;
-int curState = 1;
-// Pin 1, 2, 3 and PWM channel 0
-//L293D motor(motor1Pin1, motor1Pin2, enable1Pin, pwmChannel);
-
-const size_t callbacks_size = 4;
 
 void InitWiFi()
 {
@@ -164,16 +70,18 @@ void motorForward()
 
 void setDuty(int dc)
 {
-
+  StaticJsonDocument<200> doc;
+  //_docMotor = new DynamicJsonDocument(100);
   ledcWrite(pwmChannel, dc);
   Serial.println("Received Speed is ");
   Serial.println(dc);
   if ((dc == 0) || (curState == 0))
   {
     motorStop();
-    tb.sendTelemetryInt("State", 0); // motorEdgeSpeed
-    StaticJsonDocument<200> doc;
-    doc["motorEdgeSpeed"] = 0;
+    tb.sendTelemetryInt("motorst", 0); // motorEdgeSpeed
+    doc["motorEdgeSpeed"]=0;
+    //(*_docMotor)["motorEdgeSpeed"] = (int)0;
+    //RPC_Response((*_docMotor)["motorEdgeSpeed"]);
     RPC_Response(doc.as<JsonVariant>());
   }
   else if ((dc > 0) && (curState == 2))
@@ -185,7 +93,6 @@ void setDuty(int dc)
     motorForward();
   }
 }
-
 
 void InitMotors()
 {
@@ -199,7 +106,7 @@ void InitMotors()
 
   // attach the channel to the GPIO to be controlled
   ledcAttachPin(enable1Pin, pwmChannel);
- setDuty(dutyCycle); 
+  setDuty(dutyCycle);
   // testing
   Serial.print("Testing DC Motor...");
 }
@@ -239,14 +146,13 @@ RPC_Response processSetLedMode(const RPC_Data &data)
   // Process data
   int new_mode = data;
 
- // Serial.print("Mode to change: ");
- // Serial.println(new_mode);
+  Serial.print("Mode to change: ");
+  Serial.println(new_mode);
 
   if (new_mode != 0 && new_mode != 1)
   {
     StaticJsonDocument<200> doc;
     doc["error"] = "Unknown mode!";
-    // return RPC_Response(doc.as<JsonVariant>());
     return RPC_Response(doc.as<JsonVariant>());
   }
 
@@ -260,8 +166,6 @@ RPC_Response processSetLedMode(const RPC_Data &data)
 
   return RPC_Response(doc.as<JsonVariant>());
 }
-
-
 
 /// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
 /// if none are provided we subscribe to any shared attribute change instead
@@ -310,12 +214,11 @@ const Shared_Attribute_Callback attributes_callback(SHARED_ATTRIBUTES_LIST.cbegi
 const Attribute_Request_Callback attribute_shared_request_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
 const Attribute_Request_Callback attribute_client_request_callback(CLIENT_ATTRIBUTES_LIST.cbegin(), CLIENT_ATTRIBUTES_LIST.cend(), &processClientAttributes);
 
-
 RPC_Response processStateChange(const RPC_Data &data)
 {
   Serial.println("Received the set state RPC method");
 
-  int nextstate = data["state"];
+  int nextstate = data;
 
   switch (nextstate)
   {
@@ -337,7 +240,7 @@ RPC_Response processStateChange(const RPC_Data &data)
   Serial.println("Current state");
   Serial.println(nextstate);
 
-  tb.sendTelemetryInt("State", nextstate);
+  tb.sendTelemetryInt("motorst", nextstate);
   if (nextstate == 0)
   {
     curState = 1;
@@ -347,9 +250,9 @@ RPC_Response processStateChange(const RPC_Data &data)
     curState = nextstate;
   }
 
-  StaticJsonDocument<200> doc;
-  doc["State"] = curState;
-  return RPC_Response(doc.as<JsonVariant>());
+  _docMotor = new DynamicJsonDocument(100);
+  (*_docMotor)["motorst"] = (int)curState;
+  return RPC_Response((*_docMotor)["motorst"]);
 }
 
 RPC_Response processSpeedChange(const RPC_Data &data)
@@ -362,9 +265,12 @@ RPC_Response processSpeedChange(const RPC_Data &data)
   int speed = data;
   setDuty(speed);
   tb.sendTelemetryInt("Speed", speed);
-  StaticJsonDocument<200> doc;
-  doc["motorEdgeSpeed"] = speed;
-  return RPC_Response(doc.as<JsonVariant>());
+  // StaticJsonDocument<200> doc;
+  // doc["motorEdgeSpeed"] = (int)speed;
+  // return RPC_Response(doc.as<JsonVariant>());
+   _docMotor = new DynamicJsonDocument(100);
+   (*_docMotor)["motorEdgeSpeed"] = (int)speed;
+  return RPC_Response((*_docMotor)["motorEdgeSpeed"]);
 }
 
 // const std::array<RPC_Callback, 1U> callbacks1 = {
@@ -379,16 +285,13 @@ RPC_Response processSpeedChange(const RPC_Data &data)
 //     {"setLedMode", processSetLedMode}
 // };
 
-
 // Optional, keep subscribed shared attributes empty instead,
 // and the callback will be called for every shared attribute changed on the device,
 // instead of only the one that were entered instead
 const std::array<RPC_Callback, callbacks_size> callbacks = {
     RPC_Callback{"setLedMode", processSetLedMode},
     RPC_Callback{"motorState", processStateChange},
-    RPC_Callback{"motorSpeed", processSpeedChange}
-    };
-
+    RPC_Callback{"motorSpeed", processSpeedChange}};
 
 void setup()
 {
@@ -411,17 +314,17 @@ void loop()
     reconnect();
   }
 
-  //Serial.println(WiFi.status());
+  // Serial.println(WiFi.status());
 
   if (!tb.connected())
   {
     subscribed = false;
     // Connect to the ThingsBoard
     Serial.print("Connecting to: ");
-    Serial.print(thingsboardServer);
+    Serial.print(THINGSBOARD_SERVER);
     Serial.print(" with token ");
     Serial.println(TOKEN);
-    if (!tb.connect(thingsboardServer, TOKEN)) // THINGSBOARD_PORT))
+    if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) // THINGSBOARD_PORT))
     {
       Serial.println("Failed to connect");
       return;
@@ -449,8 +352,6 @@ void loop()
       return;
     }
 
-    
-
     // Request current states of shared attributes
     if (!tb.Shared_Attributes_Request(attribute_shared_request_callback))
     {
@@ -475,6 +376,7 @@ void loop()
     if (ledMode == 0)
     {
       previousStateChange = millis();
+      //  motorBackward();
     }
     tb.sendTelemetryInt(LED_MODE_ATTR, ledMode);
     tb.sendTelemetryBool(LED_STATE_ATTR, ledState);
@@ -487,14 +389,18 @@ void loop()
     previousStateChange = millis();
     ledState = !ledState;
     digitalWrite(LEDINBUILT, ledState);
+    // motorForward();
     tb.sendTelemetryBool(LED_STATE_ATTR, ledState);
     tb.sendAttributeBool(LED_STATE_ATTR, ledState);
     if (LEDINBUILT == 99)
     {
       Serial.print("LED state changed to: ");
-      //Serial.println(ledState);
+      Serial.println(ledState);
+      Serial.print("Motor moving forward");
+      
     }
   }
+ 
 
   ////
 
