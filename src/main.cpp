@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "services/motorService.h"
 /*
 
   Project: Main door lock
@@ -70,7 +71,7 @@ void motorForward()
 
 void setDuty(int dc)
 {
-  StaticJsonDocument<200> doc;
+  JsonVariant doc;
   //_docMotor = new DynamicJsonDocument(100);
   ledcWrite(pwmChannel, dc);
   Serial.println("Received Speed is ");
@@ -80,9 +81,7 @@ void setDuty(int dc)
     motorStop();
     tb.sendTelemetryInt("motorst", 0); // motorEdgeSpeed
     doc["motorEdgeSpeed"]=0;
-    //(*_docMotor)["motorEdgeSpeed"] = (int)0;
-    //RPC_Response((*_docMotor)["motorEdgeSpeed"]);
-    RPC_Response(doc.as<JsonVariant>());
+    RPC_Response(doc);
   }
   else if ((dc > 0) && (curState == 2))
   {
@@ -111,7 +110,7 @@ void InitMotors()
   Serial.print("Testing DC Motor...");
 }
 
-void setColor(int R, int G, int B)
+void setLedColor(int R, int G, int B)
 {
   analogWrite(PIN_RED, R);
   analogWrite(PIN_GREEN, G);
@@ -133,6 +132,55 @@ void sendDataToThingsBoard()
     tb.sendAttributeString("ssid", WiFi.SSID().c_str());
   }
 }
+
+/// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
+/// if none are provided we subscribe to any shared attribute change instead
+/// @param data Data containing the shared attributes that were changed and their current value
+void processSharedAttributes(const Shared_Attribute_Data &data)
+{
+  for (auto it = data.begin(); it != data.end(); ++it)
+  {
+    if (strcmp(it->key().c_str(), BLINKING_INTERVAL_ATTR) == 0)
+    {
+      const uint16_t new_interval = it->value().as<uint16_t>();
+      if (new_interval >= BLINKING_INTERVAL_MS_MIN && new_interval <= BLINKING_INTERVAL_MS_MAX)
+      {
+        blinkingInterval = new_interval;
+        Serial.print("Updated blinking interval to: ");
+        Serial.println(new_interval);
+      }
+    }
+    else if (strcmp(it->key().c_str(), LED_STATE_ATTR) == 0)
+    {
+      ledState = it->value().as<bool>();
+      digitalWrite(LEDINBUILT, ledState ? HIGH : LOW);
+      // digitalWrite(PIN_GREEN, ledState ? HIGH : LOW);
+      // digitalWrite(PIN_BLUE, !ledState ? HIGH : LOW);
+      // digitalWrite(PIN_RED, ledState ? HIGH : LOW);
+
+      Serial.print("Updated state to: ");
+      Serial.println(ledState);
+    }
+  }
+  attributesChanged = true;
+}
+
+void processClientAttributes(const Shared_Attribute_Data &data)
+{
+  for (auto it = data.begin(); it != data.end(); ++it)
+  {
+    if (strcmp(it->key().c_str(), LED_MODE_ATTR) == 0)
+    {
+      const uint16_t new_mode = it->value().as<uint16_t>();
+      ledMode = new_mode;
+    }
+  }
+}
+
+const Shared_Attribute_Callback attributes_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
+const Attribute_Request_Callback attribute_shared_request_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
+const Attribute_Request_Callback attribute_client_request_callback(CLIENT_ATTRIBUTES_LIST.cbegin(), CLIENT_ATTRIBUTES_LIST.cend(), &processClientAttributes);
+
 
 /// @brief Processes function for RPC call "setLedMode"
 /// RPC_Data is a JSON variant, that can be queried using operator[]
@@ -167,57 +215,8 @@ RPC_Response processSetLedMode(const RPC_Data &data)
   return RPC_Response(doc.as<JsonVariant>());
 }
 
-/// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
-/// if none are provided we subscribe to any shared attribute change instead
-/// @param data Data containing the shared attributes that were changed and their current value
-void processSharedAttributes(const Shared_Attribute_Data &data)
-{
-  for (auto it = data.begin(); it != data.end(); ++it)
-  {
-    if (strcmp(it->key().c_str(), BLINKING_INTERVAL_ATTR) == 0)
-    {
-      const uint16_t new_interval = it->value().as<uint16_t>();
-      if (new_interval >= BLINKING_INTERVAL_MS_MIN && new_interval <= BLINKING_INTERVAL_MS_MAX)
-      {
-        blinkingInterval = new_interval;
-        Serial.print("Updated blinking interval to: ");
-        Serial.println(new_interval);
-      }
-    }
-    else if (strcmp(it->key().c_str(), LED_STATE_ATTR) == 0)
-    {
-      ledState = it->value().as<bool>();
-      digitalWrite(LEDINBUILT, ledState ? HIGH : LOW);
-      digitalWrite(PIN_GREEN, ledState ? HIGH : LOW);
-      digitalWrite(PIN_BLUE, !ledState ? HIGH : LOW);
-      digitalWrite(PIN_RED, ledState ? HIGH : LOW);
 
-      ledState ? motorForward() : motorBackward();
-      Serial.print("Updated state to: ");
-      Serial.println(ledState);
-      ledState ? Serial.println("Suman LED State and motor spin forward") : Serial.println("Suman LED State and motor spin backward");
-    }
-  }
-  attributesChanged = true;
-}
-
-void processClientAttributes(const Shared_Attribute_Data &data)
-{
-  for (auto it = data.begin(); it != data.end(); ++it)
-  {
-    if (strcmp(it->key().c_str(), LED_MODE_ATTR) == 0)
-    {
-      const uint16_t new_mode = it->value().as<uint16_t>();
-      ledMode = new_mode;
-    }
-  }
-}
-
-const Shared_Attribute_Callback attributes_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
-const Attribute_Request_Callback attribute_shared_request_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
-const Attribute_Request_Callback attribute_client_request_callback(CLIENT_ATTRIBUTES_LIST.cbegin(), CLIENT_ATTRIBUTES_LIST.cend(), &processClientAttributes);
-
-RPC_Response processStateChange(const RPC_Data &data)
+RPC_Response processMotorStateChange(const RPC_Data &data)
 {
   Serial.println("Received the set state RPC method");
   
@@ -228,14 +227,17 @@ RPC_Response processStateChange(const RPC_Data &data)
   {
   case 0:
     motorStop();
+    setLedColor(247, 120, 138);
     break;
 
   case 1:
     motorForward();
+    setLedColor(0, 214, 102);
     break;
 
   case 2:
     motorBackward();
+    setLedColor(45, 150, 255);
     break;
 
   default:
@@ -254,9 +256,6 @@ RPC_Response processStateChange(const RPC_Data &data)
     curState = nextstate;
   }
 
-  // _docMotor = new DynamicJsonDocument(100);
-  // (*_docMotor)["motorst"] = (int)curState;
-
   JsonVariant doc;
   doc["motorst"] = (int)curState;
   Serial.println("Motor state");
@@ -264,25 +263,14 @@ RPC_Response processStateChange(const RPC_Data &data)
   return RPC_Response(doc);
 }
 
-RPC_Response processSpeedChange(const RPC_Data &data)
+RPC_Response processMotorSpeedChange(const RPC_Data &data)
 {
   Serial.println("Received the set speed method");
 
   // Process data
-
-  // int speed = data["speed"];
   int speed = data;
   setDuty(speed);
   tb.sendTelemetryInt("Speed", (int)speed);
-
-  // StaticJsonDocument<200> doc;
-  // doc["motorEdgeSpeed"] = (int)speed;
-  // return RPC_Response(doc.as<JsonVariant>());
-
-  //  _docMotor = new DynamicJsonDocument(100);
-  //  (*_docMotor)["motorEdgeSpeed"] = (int)speed;
-  // return RPC_Response((*_docMotor)["motorEdgeSpeed"]);
-
 
   JsonVariant doc;
   doc["motorEdgeSpeed"] = (int)speed;
@@ -291,25 +279,15 @@ RPC_Response processSpeedChange(const RPC_Data &data)
   return RPC_Response(doc);
 }
 
-// const std::array<RPC_Callback, 1U> callbacks1 = {
-//     RPC_Callback{"motorState", processStateChange}};
-// const std::array<RPC_Callback, 1U> callbacks2 = {
-//     RPC_Callback{"motorSpeed", processSpeedChange}};
-
-// const size_t callbacks_size = 2;
-// RPC_Callback callbacks[callbacks_size] = {
-//     {"motorState", processStateChange},
-//     {"motorSpeed", processSpeedChange},
-//     {"setLedMode", processSetLedMode}
-// };
+//MotorService motorService;  //trying to call class method, TODO list, to be implemented.
 
 // Optional, keep subscribed shared attributes empty instead,
 // and the callback will be called for every shared attribute changed on the device,
 // instead of only the one that were entered instead
 const std::array<RPC_Callback, callbacks_size> callbacks = {
     RPC_Callback{"setLedMode", processSetLedMode},
-    RPC_Callback{"motorState", processStateChange},
-    RPC_Callback{"motorSpeed", processSpeedChange}};
+    RPC_Callback{"motorState", processMotorStateChange},
+    RPC_Callback{"motorSpeed", processMotorSpeedChange}};
 
 void setup()
 {
@@ -394,7 +372,6 @@ void loop()
     if (ledMode == 0)
     {
       previousStateChange = millis();
-      //  motorBackward();
     }
     tb.sendTelemetryInt(LED_MODE_ATTR, ledMode);
     tb.sendTelemetryBool(LED_STATE_ATTR, ledState);
@@ -407,89 +384,16 @@ void loop()
     previousStateChange = millis();
     ledState = !ledState;
     digitalWrite(LEDINBUILT, ledState);
-    // motorForward();
     tb.sendTelemetryBool(LED_STATE_ATTR, ledState);
     tb.sendAttributeBool(LED_STATE_ATTR, ledState);
     if (LEDINBUILT == 99)
     {
       Serial.print("LED state changed to: ");
-      Serial.println(ledState);
-      Serial.print("Motor moving forward");
-      
+      Serial.println(ledState);      
     }
   }
  
 
-  ////
-
   sendDataToThingsBoard();
-
-  // // blue
-  // setColor(0, 214, 102);
-
-  // // Move the DC motor forward at maximum speed
-  // Serial.println("Moving Forward");
-  // digitalWrite(motor1Pin1, LOW);
-  // digitalWrite(motor1Pin2, HIGH);
-
-  // // LEDs
-  // digitalWrite(LEDINBUILT, HIGH);
-  // delay(2000);
-
-  // // Stop the DC motor
-  // Serial.println("Motor stopped");
-
-  // // red
-  // setColor(247, 120, 138);
-  // digitalWrite(motor1Pin1, LOW);
-  // digitalWrite(motor1Pin2, LOW);
-
-  // delay(2000);
-
-  // // Move DC motor backwards at maximum speed
-  // // yellow
-  // setColor(255, 227, 22);
-  // Serial.println("Moving Backwards");
-  // digitalWrite(motor1Pin1, HIGH);
-  // digitalWrite(motor1Pin2, LOW);
-
-  // delay(2000);
-
-  // // red
-  // setColor(247, 120, 138);
-  // // Stop the DC motor
-  // Serial.println("Motor stopped");
-  // digitalWrite(motor1Pin1, LOW);
-  // digitalWrite(motor1Pin2, LOW);
-
-  // delay(2000);
-  // digitalWrite(LEDINBUILT, LOW);
-
-  // // green
-  // setColor(62, 214, 102);
-  // // Move DC motor forward with increasing speed
-  // // digitalWrite(motor1Pin1, HIGH);
-  // // digitalWrite(motor1Pin2, LOW);
-
-  // motor.begin();
-  // motor.SetMotorSpeed(250);
-  // delay(5000);
-  // motor.Stop();
-
-  // while (dutyCycle <= 255)
-  // {
-  //   ledcWrite(pwmChannel, dutyCycle);
-  //   Serial.print("Forward with duty cycle: ");
-  //   Serial.println(dutyCycle);
-  //   // green
-  //   setColor(62, 214, 102);
-  //   dutyCycle = dutyCycle + 5;
-  //   delay(500);
-  // }
-  // dutyCycle = 200;
-  // // yellow
-  // setColor(255, 227, 22);
-  // delay(500);
-
   tb.loop();
 }

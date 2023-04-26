@@ -27,13 +27,36 @@
                 {
                   "name": "ledMode",
                   "type": "timeseries",
-                  "label": "ledMode",
+                  "label": "LED Mode",
                   "color": "#2196f3",
                   "settings": {},
-                  "_hash": 0.20539981550449327
+                  "_hash": 0.20539981550449327,
+                  "aggregationType": null,
+                  "units": null,
+                  "decimals": null,
+                  "funcBody": null,
+                  "usePostProcessing": null,
+                  "postFuncBody": null
+                },
+                {
+                  "name": "ledState",
+                  "type": "timeseries",
+                  "label": "ledState",
+                  "color": "#4caf50",
+                  "settings": {},
+                  "_hash": 0.623672712103881
                 }
               ],
-              "latestDataKeys": []
+              "latestDataKeys": [
+                {
+                  "name": "ledMode",
+                  "type": "timeseries",
+                  "label": "ledMode 2",
+                  "color": "#ffc107",
+                  "settings": {},
+                  "_hash": 0.3592718436185651
+                }
+              ]
             }
           ],
           "timewindow": {
@@ -244,6 +267,14 @@
                   "color": "#ffeb3b",
                   "settings": {},
                   "_hash": 0.23111185160488734
+                },
+                {
+                  "name": "motorst",
+                  "type": "timeseries",
+                  "label": "motorst",
+                  "color": "#03a9f4",
+                  "settings": {},
+                  "_hash": 0.19941440666710353
                 }
               ]
             }
@@ -262,8 +293,8 @@
               "interval": 1000,
               "timewindowMs": 60000,
               "fixedTimewindow": {
-                "startTimeMs": 1681454823813,
-                "endTimeMs": 1681541223813
+                "startTimeMs": 1682432853043,
+                "endTimeMs": 1682519253043
               },
               "quickInterval": "CURRENT_DAY"
             },
@@ -278,7 +309,7 @@
           "padding": "0px",
           "settings": {
             "useMarkdownTextFunction": false,
-            "markdownTextPattern": "##### ${entityName}\n\n\n| **Attribute**   | **Current value** |\n|:-:|:-:|\n| **MAC address** | ${MAC address}    |\n| **RSSI**        | ${RSSI}           |\n| **BSSID**       | ${BSSID}          |\n| **SSID**        | ${ssid}           |\n| **Channel**     | ${channel}        |\n| **Local IP**    | ${localIp}        |\n| **Active**      | ${Active}         |\n\n###### Device info\n\n**Device label** - ${entityLabel}   \n**Device type**- ${Type}  \n**Created time** - {{ ${createdTime} | date:'full' }}  \n\n"
+            "markdownTextPattern": "##### ${entityName}\n\n\n| **Attribute**   | **Current value** |\n|:-:|:-:|\n| **MAC address** | ${MAC address}    |\n| **RSSI**        | ${RSSI}           |\n| **BSSID**       | ${BSSID}          |\n| **SSID**        | ${ssid}           |\n| **Channel**     | ${channel}        |\n| **Local IP**    | ${localIp}        |\n| **Active**      | ${Active}         |\n\n###### Device info\n\n**Device label** - ${entityLabel}   \n**Device type**- ${Type}  \n**Created time** - {{ ${createdTime} | date:'full' }}  \n**Motor State**- {{ ${motorst} }}\n"
           },
           "title": "",
           "showTitleIcon": false,
@@ -424,8 +455,8 @@
               "interval": 1000,
               "timewindowMs": 60000,
               "fixedTimewindow": {
-                "startTimeMs": 1681454823813,
-                "endTimeMs": 1681541223813
+                "startTimeMs": 1682432853043,
+                "endTimeMs": 1682519253043
               },
               "quickInterval": "CURRENT_DAY"
             },
@@ -741,7 +772,7 @@
             "buttonText": "Backward",
             "oneWayElseTwoWay": true,
             "methodName": "motorState",
-            "methodParams": "{\"state\":2}",
+            "methodParams": "{\"motorst\":2}",
             "requestTimeout": 5000,
             "showError": false,
             "requestPersistent": false,
@@ -798,7 +829,7 @@
             "buttonText": "Forward",
             "oneWayElseTwoWay": true,
             "methodName": "motorState",
-            "methodParams": "{\"state\":1}",
+            "methodParams": "{\"motorst\":1}",
             "requestTimeout": 5000,
             "showError": false,
             "requestPersistent": false,
@@ -848,14 +879,14 @@
         "config": {
           "targetDeviceAliases": [],
           "showTitle": true,
-          "backgroundColor": "#e6e7e8",
+          "backgroundColor": "#df4040",
           "color": "rgba(0, 0, 0, 0.87)",
           "padding": "0px",
           "settings": {
             "buttonText": "Halt",
             "oneWayElseTwoWay": true,
             "methodName": "motorState",
-            "methodParams": "{\"state\":0}",
+            "methodParams": "{\"motorst\":0}",
             "requestTimeout": 5000,
             "showError": false,
             "requestPersistent": false,
@@ -892,145 +923,6 @@
         "col": 0,
         "id": "112f4fb0-1fa0-6277-cd73-b7211fcb3f4e"
       },
-      "1025ebac-8d4f-59d0-f4b9-68247f33878b": {
-        "isSystemType": true,
-        "bundleAlias": "alarm_widgets",
-        "typeAlias": "alarms_table",
-        "type": "alarm",
-        "title": "New widget",
-        "image": null,
-        "description": null,
-        "sizeX": 10.5,
-        "sizeY": 6.5,
-        "config": {
-          "timewindow": {
-            "realtime": {
-              "interval": 1000,
-              "timewindowMs": 86400000
-            },
-            "aggregation": {
-              "type": "NONE",
-              "limit": 200
-            }
-          },
-          "showTitle": true,
-          "backgroundColor": "rgb(255, 255, 255)",
-          "color": "rgba(0, 0, 0, 0.87)",
-          "padding": "4px",
-          "settings": {
-            "enableSelection": true,
-            "enableSearch": true,
-            "displayDetails": true,
-            "allowAcknowledgment": true,
-            "allowClear": true,
-            "displayPagination": true,
-            "defaultPageSize": 10,
-            "defaultSortOrder": "-createdTime",
-            "enableSelectColumnDisplay": true,
-            "enableStickyAction": false,
-            "enableFilter": true
-          },
-          "title": "New Alarms table",
-          "dropShadow": true,
-          "enableFullscreen": true,
-          "titleStyle": {
-            "fontSize": "16px",
-            "fontWeight": 400,
-            "padding": "5px 10px 5px 10px"
-          },
-          "useDashboardTimewindow": false,
-          "showLegend": false,
-          "alarmSource": {
-            "type": "entity",
-            "name": null,
-            "entityAliasId": "705a951a-8181-c335-3af3-d87ac95b9f27",
-            "filterId": null,
-            "dataKeys": [
-              {
-                "name": "createdTime",
-                "type": "alarm",
-                "label": "Created time",
-                "color": "#2196f3",
-                "settings": {
-                  "useCellStyleFunction": false,
-                  "cellStyleFunction": "",
-                  "useCellContentFunction": false,
-                  "cellContentFunction": ""
-                },
-                "_hash": 0.021092237451093787
-              },
-              {
-                "name": "originator",
-                "type": "alarm",
-                "label": "Originator",
-                "color": "#4caf50",
-                "settings": {
-                  "useCellStyleFunction": false,
-                  "cellStyleFunction": "",
-                  "useCellContentFunction": false,
-                  "cellContentFunction": ""
-                },
-                "_hash": 0.2780007688856758
-              },
-              {
-                "name": "type",
-                "type": "alarm",
-                "label": "Type",
-                "color": "#f44336",
-                "settings": {
-                  "useCellStyleFunction": false,
-                  "cellStyleFunction": "",
-                  "useCellContentFunction": false,
-                  "cellContentFunction": ""
-                },
-                "_hash": 0.7323586880398418
-              },
-              {
-                "name": "severity",
-                "type": "alarm",
-                "label": "Severity",
-                "color": "#ffc107",
-                "settings": {
-                  "useCellStyleFunction": false,
-                  "useCellContentFunction": false
-                },
-                "_hash": 0.09927019860088193
-              },
-              {
-                "name": "status",
-                "type": "alarm",
-                "label": "Status",
-                "color": "#607d8b",
-                "settings": {
-                  "useCellStyleFunction": false,
-                  "cellStyleFunction": "",
-                  "useCellContentFunction": false,
-                  "cellContentFunction": ""
-                },
-                "_hash": 0.6588418951443418
-              }
-            ]
-          },
-          "alarmSearchStatus": "ANY",
-          "alarmsPollingInterval": 5,
-          "showTitleIcon": false,
-          "titleIcon": "more_horiz",
-          "iconColor": "rgba(0, 0, 0, 0.87)",
-          "iconSize": "24px",
-          "titleTooltip": "",
-          "widgetStyle": {},
-          "displayTimewindow": true,
-          "actions": {},
-          "alarmStatusList": [],
-          "alarmSeverityList": [],
-          "alarmTypeList": [],
-          "searchPropagatedAlarms": false,
-          "datasources": []
-        },
-        "row": 0,
-        "col": 0,
-        "id": "1025ebac-8d4f-59d0-f4b9-68247f33878b"
-      },
       "cab0eb42-7347-a270-b0e1-0f2ec5dfd244": {
         "isSystemType": true,
         "bundleAlias": "charts",
@@ -1050,12 +942,18 @@
               "filterId": null,
               "dataKeys": [
                 {
-                  "name": "State",
+                  "name": "motorst",
                   "type": "timeseries",
                   "label": "State",
                   "color": "#2196f3",
                   "settings": {},
-                  "_hash": 0.86095212464259
+                  "_hash": 0.86095212464259,
+                  "aggregationType": null,
+                  "units": null,
+                  "decimals": null,
+                  "funcBody": null,
+                  "usePostProcessing": null,
+                  "postFuncBody": null
                 }
               ],
               "latestDataKeys": []
@@ -1286,14 +1184,14 @@
           "main": {
             "widgets": {
               "c491181b-10b7-eef8-516b-63e55a076b54": {
-                "sizeX": 14,
-                "sizeY": 3,
+                "sizeX": 6,
+                "sizeY": 4,
                 "row": 3,
                 "col": 11
               },
               "1f7287a2-8b34-6c21-7b0d-2e019fbc8650": {
                 "sizeX": 11,
-                "sizeY": 12,
+                "sizeY": 11,
                 "row": 0,
                 "col": 0
               },
@@ -1310,51 +1208,45 @@
                 "col": 11
               },
               "3c4e4d4f-cb76-488f-96ee-ac0252b8df8e": {
-                "sizeX": 14,
-                "sizeY": 6,
-                "row": 6,
-                "col": 11
+                "sizeX": 7,
+                "sizeY": 4,
+                "row": 3,
+                "col": 17
               },
               "b219b2f8-8047-b93d-ffae-ce4864b4213a": {
                 "sizeX": 5,
-                "sizeY": 4,
-                "row": 12,
+                "sizeY": 5,
+                "row": 11,
                 "col": 0
               },
               "16f904b3-d55f-96f6-68cd-62f775b3aa0d": {
                 "sizeX": 3,
                 "sizeY": 2,
-                "row": 12,
+                "row": 11,
                 "col": 5
               },
               "d9b85160-8086-7924-a1bf-4f59c3dc38a7": {
                 "sizeX": 3,
                 "sizeY": 2,
-                "row": 12,
+                "row": 11,
                 "col": 8
               },
               "112f4fb0-1fa0-6277-cd73-b7211fcb3f4e": {
-                "sizeX": 3,
-                "sizeY": 2,
-                "row": 14,
+                "sizeX": 6,
+                "sizeY": 3,
+                "row": 13,
                 "col": 5
               },
-              "1025ebac-8d4f-59d0-f4b9-68247f33878b": {
-                "sizeX": 11,
-                "sizeY": 6,
-                "row": 16,
-                "col": 0
-              },
               "cab0eb42-7347-a270-b0e1-0f2ec5dfd244": {
-                "sizeX": 14,
-                "sizeY": 5,
-                "row": 12,
+                "sizeX": 13,
+                "sizeY": 4,
+                "row": 7,
                 "col": 11
               },
               "d68ec564-1a26-8d0e-eac7-e107b2b80b4a": {
-                "sizeX": 14,
+                "sizeX": 13,
                 "sizeY": 5,
-                "row": 17,
+                "row": 11,
                 "col": 11
               }
             },
