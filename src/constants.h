@@ -5,7 +5,9 @@
 #define THINGSBOARD_ENABLE_DYNAMIC 0
 
 #include <WiFi.h>
+
 #include <WiFiClientSecure.h>
+
 
 #include <ThingsBoard.h>
 #include <Arduino.h>
@@ -74,7 +76,7 @@ bool subscribed = false;
 // handle led state and mode changes
 volatile bool attributesChanged = false;
 // LED modes: 0 - continious state, 1 - blinking
-volatile int ledMode = 0;
+int ledMode = 0;
 // Current led state
 volatile bool ledState = false;
 
