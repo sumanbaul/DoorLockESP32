@@ -163,7 +163,7 @@ RPC_Response processSetLedMode(const RPC_Data &data)
   // Returning current mode
   StaticJsonDocument<200> doc;
   doc["newMode"] = (int)ledMode;
-
+  Serial.println("NEW MODE SUMAN");
   return RPC_Response(doc.as<JsonVariant>());
 }
 
@@ -191,8 +191,11 @@ void processSharedAttributes(const Shared_Attribute_Data &data)
       digitalWrite(PIN_GREEN, ledState ? HIGH : LOW);
       digitalWrite(PIN_BLUE, !ledState ? HIGH : LOW);
       digitalWrite(PIN_RED, ledState ? HIGH : LOW);
+
+      ledState ? motorForward() : motorBackward();
       Serial.print("Updated state to: ");
       Serial.println(ledState);
+      ledState ? Serial.println("Suman LED State and motor spin forward") : Serial.println("Suman LED State and motor spin backward");
     }
   }
   attributesChanged = true;
@@ -217,9 +220,10 @@ const Attribute_Request_Callback attribute_client_request_callback(CLIENT_ATTRIB
 RPC_Response processStateChange(const RPC_Data &data)
 {
   Serial.println("Received the set state RPC method");
-
-  int nextstate = data;
-
+  
+  int nextstate = data["motorst"];
+  Serial.println("RPC Su:");
+  Serial.print(nextstate);
   switch (nextstate)
   {
   case 0:
@@ -250,9 +254,14 @@ RPC_Response processStateChange(const RPC_Data &data)
     curState = nextstate;
   }
 
-  _docMotor = new DynamicJsonDocument(100);
-  (*_docMotor)["motorst"] = (int)curState;
-  return RPC_Response((*_docMotor)["motorst"]);
+  // _docMotor = new DynamicJsonDocument(100);
+  // (*_docMotor)["motorst"] = (int)curState;
+
+  JsonVariant doc;
+  doc["motorst"] = (int)curState;
+  Serial.println("Motor state");
+  Serial.print(curState);
+  return RPC_Response(doc);
 }
 
 RPC_Response processSpeedChange(const RPC_Data &data)
@@ -264,13 +273,22 @@ RPC_Response processSpeedChange(const RPC_Data &data)
   // int speed = data["speed"];
   int speed = data;
   setDuty(speed);
-  tb.sendTelemetryInt("Speed", speed);
+  tb.sendTelemetryInt("Speed", (int)speed);
+
   // StaticJsonDocument<200> doc;
   // doc["motorEdgeSpeed"] = (int)speed;
   // return RPC_Response(doc.as<JsonVariant>());
-   _docMotor = new DynamicJsonDocument(100);
-   (*_docMotor)["motorEdgeSpeed"] = (int)speed;
-  return RPC_Response((*_docMotor)["motorEdgeSpeed"]);
+
+  //  _docMotor = new DynamicJsonDocument(100);
+  //  (*_docMotor)["motorEdgeSpeed"] = (int)speed;
+  // return RPC_Response((*_docMotor)["motorEdgeSpeed"]);
+
+
+  JsonVariant doc;
+  doc["motorEdgeSpeed"] = (int)speed;
+  Serial.println("Speed is:");
+  Serial.print(speed);
+  return RPC_Response(doc);
 }
 
 // const std::array<RPC_Callback, 1U> callbacks1 = {
