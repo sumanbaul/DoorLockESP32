@@ -275,6 +275,14 @@
                   "color": "#03a9f4",
                   "settings": {},
                   "_hash": 0.19941440666710353
+                },
+                {
+                  "name": "Speed",
+                  "type": "timeseries",
+                  "label": "Speed",
+                  "color": "#ff9800",
+                  "settings": {},
+                  "_hash": 0.3281223349201261
                 }
               ]
             }
@@ -293,8 +301,8 @@
               "interval": 1000,
               "timewindowMs": 60000,
               "fixedTimewindow": {
-                "startTimeMs": 1682432853043,
-                "endTimeMs": 1682519253043
+                "startTimeMs": 1682454823888,
+                "endTimeMs": 1682541223888
               },
               "quickInterval": "CURRENT_DAY"
             },
@@ -309,7 +317,7 @@
           "padding": "0px",
           "settings": {
             "useMarkdownTextFunction": false,
-            "markdownTextPattern": "##### ${entityName}\n\n\n| **Attribute**   | **Current value** |\n|:-:|:-:|\n| **MAC address** | ${MAC address}    |\n| **RSSI**        | ${RSSI}           |\n| **BSSID**       | ${BSSID}          |\n| **SSID**        | ${ssid}           |\n| **Channel**     | ${channel}        |\n| **Local IP**    | ${localIp}        |\n| **Active**      | ${Active}         |\n\n###### Device info\n\n**Device label** - ${entityLabel}   \n**Device type**- ${Type}  \n**Created time** - {{ ${createdTime} | date:'full' }}  \n**Motor State**- {{ ${motorst} }}\n"
+            "markdownTextPattern": "##### ${entityName}\n\n\n| **Attribute**   | **Current value** |\n|:-:|:-:|\n| **MAC address** | ${MAC address}    |\n| **RSSI**        | ${RSSI}           |\n| **BSSID**       | ${BSSID}          |\n| **SSID**        | ${ssid}           |\n| **Channel**     | ${channel}        |\n| **Local IP**    | ${localIp}        |\n| **Active**      | ${Active}         |\n| **Speed**       | ${Speed}          |\n\n#### Device info\n\n**Device label** - ${entityLabel}   \n**Device type**- ${Type}  \n**Created time** - {{ ${createdTime} | date:'full' }}  \n<!--**Motor State**- {{ ${motorst} }}-->\n"
           },
           "title": "",
           "showTitleIcon": false,
@@ -455,8 +463,8 @@
               "interval": 1000,
               "timewindowMs": 60000,
               "fixedTimewindow": {
-                "startTimeMs": 1682432853043,
-                "endTimeMs": 1682519253043
+                "startTimeMs": 1682454823888,
+                "endTimeMs": 1682541223888
               },
               "quickInterval": "CURRENT_DAY"
             },
@@ -715,7 +723,7 @@
           "padding": "0px",
           "settings": {
             "title": "Speed control",
-            "initialValue": 30,
+            "initialValue": 200,
             "minValue": 0,
             "maxValue": 255,
             "getValueMethod": "motorEdgeSpeed",
@@ -765,7 +773,7 @@
         "config": {
           "targetDeviceAliases": [],
           "showTitle": true,
-          "backgroundColor": "#e6e7e8",
+          "backgroundColor": "#948cb8",
           "color": "rgba(0, 0, 0, 0.87)",
           "padding": "0px",
           "settings": {
@@ -802,7 +810,7 @@
           "pageSize": 1024,
           "noDataDisplayMessage": "",
           "titleIcon": "keyboard_double_arrow_left",
-          "iconColor": "rgba(0, 0, 0, 0.87)",
+          "iconColor": "rgba(255,255,255,0.87)",
           "iconSize": "24px"
         },
         "row": 0,
@@ -822,7 +830,7 @@
         "config": {
           "targetDeviceAliases": [],
           "showTitle": true,
-          "backgroundColor": "#e6e7e8",
+          "backgroundColor": "#67ae81",
           "color": "rgba(0, 0, 0, 0.87)",
           "padding": "0px",
           "settings": {
@@ -879,7 +887,7 @@
         "config": {
           "targetDeviceAliases": [],
           "showTitle": true,
-          "backgroundColor": "#df4040",
+          "backgroundColor": "#e1b0b0",
           "color": "rgba(0, 0, 0, 0.87)",
           "padding": "0px",
           "settings": {
@@ -1074,25 +1082,33 @@
                   "name": "Speed",
                   "type": "timeseries",
                   "label": "Speed",
-                  "color": "#2196f3",
+                  "color": "#6aac10",
                   "settings": {},
-                  "_hash": 0.4352637038224798
+                  "_hash": 0.32768518788947487,
+                  "aggregationType": null,
+                  "units": null,
+                  "decimals": null,
+                  "funcBody": null,
+                  "usePostProcessing": null,
+                  "postFuncBody": null
                 }
               ],
-              "latestDataKeys": []
+              "latestDataKeys": null
             }
           ],
           "timewindow": {
             "hideInterval": false,
+            "hideLastInterval": false,
+            "hideQuickInterval": false,
             "hideAggregation": false,
             "hideAggInterval": false,
             "hideTimezone": false,
             "selectedTab": 0,
             "realtime": {
               "realtimeType": 0,
-              "timewindowMs": 900000,
+              "timewindowMs": 7200000,
               "quickInterval": "CURRENT_DAY",
-              "interval": 10000
+              "interval": 15000
             },
             "aggregation": {
               "type": "AVG",
@@ -1184,70 +1200,70 @@
           "main": {
             "widgets": {
               "c491181b-10b7-eef8-516b-63e55a076b54": {
-                "sizeX": 6,
-                "sizeY": 4,
-                "row": 3,
-                "col": 11
+                "sizeX": 5,
+                "sizeY": 5,
+                "row": 14,
+                "col": 16
               },
               "1f7287a2-8b34-6c21-7b0d-2e019fbc8650": {
                 "sizeX": 11,
-                "sizeY": 11,
+                "sizeY": 14,
                 "row": 0,
                 "col": 0
               },
               "40330404-8f8e-d21b-39a0-b2d33462711a": {
-                "sizeX": 7,
-                "sizeY": 3,
-                "row": 0,
-                "col": 17
+                "sizeX": 5,
+                "sizeY": 4,
+                "row": 10,
+                "col": 16
               },
               "311d9a7a-dc79-f5e5-5777-e04a5b979e29": {
-                "sizeX": 6,
-                "sizeY": 3,
-                "row": 0,
+                "sizeX": 5,
+                "sizeY": 4,
+                "row": 10,
                 "col": 11
               },
               "3c4e4d4f-cb76-488f-96ee-ac0252b8df8e": {
-                "sizeX": 7,
-                "sizeY": 4,
-                "row": 3,
-                "col": 17
+                "sizeX": 4,
+                "sizeY": 5,
+                "row": 14,
+                "col": 12
               },
               "b219b2f8-8047-b93d-ffae-ce4864b4213a": {
-                "sizeX": 5,
-                "sizeY": 5,
-                "row": 11,
-                "col": 0
+                "sizeX": 10,
+                "sizeY": 7,
+                "row": 0,
+                "col": 11
               },
               "16f904b3-d55f-96f6-68cd-62f775b3aa0d": {
                 "sizeX": 3,
-                "sizeY": 2,
-                "row": 11,
-                "col": 5
-              },
-              "d9b85160-8086-7924-a1bf-4f59c3dc38a7": {
-                "sizeX": 3,
-                "sizeY": 2,
-                "row": 11,
-                "col": 8
-              },
-              "112f4fb0-1fa0-6277-cd73-b7211fcb3f4e": {
-                "sizeX": 6,
                 "sizeY": 3,
-                "row": 13,
-                "col": 5
-              },
-              "cab0eb42-7347-a270-b0e1-0f2ec5dfd244": {
-                "sizeX": 13,
-                "sizeY": 4,
                 "row": 7,
                 "col": 11
               },
-              "d68ec564-1a26-8d0e-eac7-e107b2b80b4a": {
-                "sizeX": 13,
+              "d9b85160-8086-7924-a1bf-4f59c3dc38a7": {
+                "sizeX": 3,
+                "sizeY": 3,
+                "row": 7,
+                "col": 18
+              },
+              "112f4fb0-1fa0-6277-cd73-b7211fcb3f4e": {
+                "sizeX": 4,
+                "sizeY": 3,
+                "row": 7,
+                "col": 14
+              },
+              "cab0eb42-7347-a270-b0e1-0f2ec5dfd244": {
+                "sizeX": 6,
                 "sizeY": 5,
-                "row": 11,
-                "col": 11
+                "row": 14,
+                "col": 6
+              },
+              "d68ec564-1a26-8d0e-eac7-e107b2b80b4a": {
+                "sizeX": 6,
+                "sizeY": 5,
+                "row": 14,
+                "col": 0
               }
             },
             "gridSettings": {

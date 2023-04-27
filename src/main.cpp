@@ -48,18 +48,27 @@ void InitLeds()
   // Serial.begin(921600);
 }
 
+void setLedColor(int R, int G, int B)
+{
+  analogWrite(PIN_RED, R);
+  analogWrite(PIN_GREEN, G);
+  analogWrite(PIN_BLUE, B);
+}
+
 void motorStop()
 {
   Serial.println("Motor stopped");
   digitalWrite(motor1Pin1, LOW);
   digitalWrite(motor1Pin2, LOW);
-  delay(10);
+  setLedColor(247, 120, 138);
+  //delay(10);
 }
 void motorBackward()
 {
   Serial.println("Moving Backwards");
   digitalWrite(motor1Pin1, HIGH);
   digitalWrite(motor1Pin2, LOW);
+  setLedColor(45, 150, 255);
 }
 
 void motorForward()
@@ -67,6 +76,7 @@ void motorForward()
   Serial.println("Moving Forward");
   digitalWrite(motor1Pin1, LOW);
   digitalWrite(motor1Pin2, HIGH);
+  setLedColor(0, 214, 102);
 }
 
 void setDuty(int dc)
@@ -85,11 +95,17 @@ void setDuty(int dc)
   }
   else if ((dc > 0) && (curState == 2))
   {
+    doc["motorEdgeSpeed"]= dc;
+    Serial.println("motorEdgeSpeed: "+ dc);
     motorBackward();
+    RPC_Response(doc);
   }
   else if ((dc > 0) && (curState == 1))
   {
+    doc["motorEdgeSpeed"]= dc;
+    Serial.println("motorEdgeSpeed: "+ dc);
     motorForward();
+    RPC_Response(doc);
   }
 }
 
@@ -110,12 +126,7 @@ void InitMotors()
   Serial.print("Testing DC Motor...");
 }
 
-void setLedColor(int R, int G, int B)
-{
-  analogWrite(PIN_RED, R);
-  analogWrite(PIN_GREEN, G);
-  analogWrite(PIN_BLUE, B);
-}
+
 
 void sendDataToThingsBoard()
 {
@@ -199,9 +210,9 @@ RPC_Response processSetLedMode(const RPC_Data &data)
 
   if (new_mode != 0 && new_mode != 1)
   {
-    StaticJsonDocument<200> doc;
+    JsonVariant doc;
     doc["error"] = "Unknown mode!";
-    return RPC_Response(doc.as<JsonVariant>());
+    return RPC_Response(doc);
   }
 
   ledMode = new_mode;
@@ -209,10 +220,10 @@ RPC_Response processSetLedMode(const RPC_Data &data)
   attributesChanged = true;
 
   // Returning current mode
-  StaticJsonDocument<200> doc;
+  JsonVariant doc;
   doc["newMode"] = (int)ledMode;
   Serial.println("NEW MODE SUMAN");
-  return RPC_Response(doc.as<JsonVariant>());
+  return RPC_Response(doc);
 }
 
 
@@ -227,17 +238,14 @@ RPC_Response processMotorStateChange(const RPC_Data &data)
   {
   case 0:
     motorStop();
-    setLedColor(247, 120, 138);
     break;
 
   case 1:
     motorForward();
-    setLedColor(0, 214, 102);
     break;
 
   case 2:
     motorBackward();
-    setLedColor(45, 150, 255);
     break;
 
   default:

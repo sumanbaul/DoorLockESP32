@@ -118,7 +118,7 @@ const int freq = 30000;
 const int pwmChannel = 0;
 const int resolution = 8;
 int dutyCycle = 255;
-int curState = 1;
+int curState = 0;
 // Pin 1, 2, 3 and PWM channel 0
 //L293D motor(motor1Pin1, motor1Pin2, enable1Pin, pwmChannel);
 
