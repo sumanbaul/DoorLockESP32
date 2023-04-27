@@ -14,6 +14,24 @@ public:
 
     LedService ledService;
 
+    // void InitMotors()
+    // {
+    //     // sets the pins as outputs:
+    //     pinMode(motor1Pin1, OUTPUT);
+    //     pinMode(motor1Pin2, OUTPUT);
+    //     pinMode(enable1Pin, OUTPUT);
+
+    //     // configure LED PWM functionalitites
+    //     ledcSetup(pwmChannel, freq, resolution);
+
+    //     // attach the channel to the GPIO to be controlled
+    //     ledcAttachPin(enable1Pin, pwmChannel);
+    //     setDuty(dutyCycle);
+
+    //     // testing
+    //     Serial.print("Testing DC Motor...");
+    // }
+
     void motorStop()
     {
         Serial.println("Motor stopped");
@@ -75,6 +93,22 @@ MotorControl::MotorControl(/* args */)
 
 MotorControl::~MotorControl()
 {
+    
+        // sets the pins as outputs:
+        pinMode(motor1Pin1, OUTPUT);
+        pinMode(motor1Pin2, OUTPUT);
+        pinMode(enable1Pin, OUTPUT);
+
+        // configure LED PWM functionalitites
+        ledcSetup(pwmChannel, freq, resolution);
+
+        // attach the channel to the GPIO to be controlled
+        ledcAttachPin(enable1Pin, pwmChannel);
+        setDuty(dutyCycle);
+
+        // testing
+        Serial.print("Testing DC Motor...");
+   
 }
 
 #endif

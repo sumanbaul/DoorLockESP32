@@ -1,6 +1,7 @@
 #include "constants.h"
 #include "services/motorThingsboardService.h"
 #include "services/motorControlService.h"
+#include "services/wifiService.h"
 /*
 
   Project: Main door lock
@@ -11,125 +12,14 @@
 
 //Initialize variables
 MotorControl motorControl = MotorControl();
+LedService ledService = LedService();
+WifiService wifiService = WifiService();
 
-void InitWiFi()
-{
-  Serial.println("Connecting");
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: ");
-  Serial.println(WiFi.localIP());
-}
 
-void reconnect()
-{
-  // Loop until we're reconnected
-  status = WiFi.status();
-  if (status != WL_CONNECTED)
-  {
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-    while (WiFi.status() != WL_CONNECTED)
-    {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println("Connected to AP");
-  }
-}
 
-void InitLeds()
-{
-  pinMode(PIN_RED, OUTPUT);
-  pinMode(PIN_GREEN, OUTPUT);
-  pinMode(PIN_BLUE, OUTPUT);
-  pinMode(LEDINBUILT, OUTPUT);
-  // Serial.begin(921600);
-}
 
-void setLedColor(int R, int G, int B)
-{
-  analogWrite(PIN_RED, R);
-  analogWrite(PIN_GREEN, G);
-  analogWrite(PIN_BLUE, B);
-}
 
-// void motorStop()
-// {
-//   Serial.println("Motor stopped");
-//   digitalWrite(motor1Pin1, LOW);
-//   digitalWrite(motor1Pin2, LOW);
-//   setLedColor(247, 120, 138);
-//   //delay(10);
-// }
-// void motorBackward()
-// {
-//   Serial.println("Moving Backwards");
-//   digitalWrite(motor1Pin1, HIGH);
-//   digitalWrite(motor1Pin2, LOW);
-//   setLedColor(45, 150, 255);
-// }
-
-// void motorForward()
-// {
-//   Serial.println("Moving Forward");
-//   digitalWrite(motor1Pin1, LOW);
-//   digitalWrite(motor1Pin2, HIGH);
-//   setLedColor(0, 214, 102);
-// }
-
-// void setDuty(int dc)
-// {
-//   JsonVariant doc;
-//   //_docMotor = new DynamicJsonDocument(100);
-//   ledcWrite(pwmChannel, dc);
-//   Serial.println("Received Speed is ");
-//   Serial.println(dc);
-//   if ((dc == 0) || (curState == 0))
-//   {
-//     motorStop();
-//     tb.sendTelemetryInt("motorst", 0); // motorEdgeSpeed
-//     doc["motorEdgeSpeed"]=0;
-//     RPC_Response(doc);
-//   }
-//   else if ((dc > 0) && (curState == 2))
-//   {
-//     doc["motorEdgeSpeed"]= dc;
-//     Serial.println("motorEdgeSpeed: "+ dc);
-//     motorBackward();
-//     RPC_Response(doc);
-//   }
-//   else if ((dc > 0) && (curState == 1))
-//   {
-//     doc["motorEdgeSpeed"]= dc;
-//     Serial.println("motorEdgeSpeed: "+ dc);
-//     motorForward();
-//     RPC_Response(doc);
-//   }
-// }
-
-void InitMotors()
-{
-  // sets the pins as outputs:
-  pinMode(motor1Pin1, OUTPUT);
-  pinMode(motor1Pin2, OUTPUT);
-  pinMode(enable1Pin, OUTPUT);
-
-  // configure LED PWM functionalitites
-  ledcSetup(pwmChannel, freq, resolution);
-
-  // attach the channel to the GPIO to be controlled
-  ledcAttachPin(enable1Pin, pwmChannel);
-  motorControl.setDuty(dutyCycle);
-  
-  // testing
-  Serial.print("Testing DC Motor...");
-}
 
 
 
@@ -231,7 +121,6 @@ RPC_Response processSetLedMode(const RPC_Data &data)
   return RPC_Response(doc);
 }
 
-
 RPC_Response processMotorStateChange(const RPC_Data &data)
 {
   Serial.println("Received the set state RPC method");
@@ -292,7 +181,6 @@ RPC_Response processMotorSpeedChange(const RPC_Data &data)
   return RPC_Response(doc);
 }
 
-//MotorService motorService;  //trying to call class method, TODO list, to be implemented.
 
 // Optional, keep subscribed shared attributes empty instead,
 // and the callback will be called for every shared attribute changed on the device,
@@ -306,13 +194,12 @@ void setup()
 {
   // Increase internal buffer size after inital creation.
   tb.setBufferSize(128);
-
   Serial.begin(115200);
-
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  InitWiFi();
-  InitLeds();
-  InitMotors();
+
+  wifiService.InitWiFi();
+  ledService.InitLeds();
+  motorControl.~MotorControl();
 }
 
 void loop()
@@ -320,7 +207,7 @@ void loop()
   if (WiFi.status() != WL_CONNECTED)
   {
     subscribed = false;
-    reconnect();
+    wifiService.reconnectWifi();
   }
 
   // Serial.println(WiFi.status());
@@ -342,7 +229,7 @@ void loop()
     tb.sendAttributeString("macAddress", WiFi.macAddress().c_str());
   }
 
-  ////
+  
   if (!subscribed)
   {
     Serial.println("Subscribing for RPC...");
