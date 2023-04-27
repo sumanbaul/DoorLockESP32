@@ -1,13 +1,17 @@
-#ifndef MOTORSERVICE_H
-#define MOTORSERVICE_H
+#ifndef MOTORTHINGSBOARDSERVICE_H
+#define MOTORTHINGSBOARDSERVICE_H
 
 #include <constants.h>
+#include <services/motorControlService.h>
 
 class MotorService
 {
 
 public:
-    // MotorService();
+     MotorService(){
+       
+     };
+      MotorControl motorControl = MotorControl();
     //  {
     //  callbacks = {
     //      RPC_Callback{"setLedMode", processSetLedMode},
@@ -34,18 +38,15 @@ public:
         switch (nextstate)
         {
         case 0:
-            motorStop();
-            setLedColor(247, 120, 138);
+            motorControl.motorStop();
             break;
 
         case 1:
-            motorForward();
-            setLedColor(0, 214, 102);
+            motorControl.motorForward();
             break;
 
         case 2:
-            motorBackward();
-            setLedColor(45, 150, 255);
+            motorControl.motorBackward();
             break;
 
         default:
@@ -78,26 +79,7 @@ public:
         return RPC_Response(doc);
     }
 
-    void motorStop()
-    {
-        Serial.println("Motor stopped");
-        digitalWrite(motor1Pin1, LOW);
-        digitalWrite(motor1Pin2, LOW);
-        delay(10);
-    }
-    void motorBackward()
-    {
-        Serial.println("Moving Backwards");
-        digitalWrite(motor1Pin1, HIGH);
-        digitalWrite(motor1Pin2, LOW);
-    }
-
-    void motorForward()
-    {
-        Serial.println("Moving Forward");
-        digitalWrite(motor1Pin1, LOW);
-        digitalWrite(motor1Pin2, HIGH);
-    }
+    
     void setLedColor(int R, int G, int B)
     {
         analogWrite(PIN_RED, R);
@@ -106,8 +88,7 @@ public:
     }
 
     private:
-        std::array<RPC_Callback, 4U>
-            callbacks;
+        std::array<RPC_Callback, 4U> callbacks;
 };
 
 #endif

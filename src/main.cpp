@@ -1,5 +1,6 @@
 #include "constants.h"
-#include "services/motorService.h"
+#include "services/motorThingsboardService.h"
+#include "services/motorControlService.h"
 /*
 
   Project: Main door lock
@@ -7,6 +8,9 @@
   Developer: Suman Baul
 
 */
+
+//Initialize variables
+MotorControl motorControl = MotorControl();
 
 void InitWiFi()
 {
@@ -55,59 +59,59 @@ void setLedColor(int R, int G, int B)
   analogWrite(PIN_BLUE, B);
 }
 
-void motorStop()
-{
-  Serial.println("Motor stopped");
-  digitalWrite(motor1Pin1, LOW);
-  digitalWrite(motor1Pin2, LOW);
-  setLedColor(247, 120, 138);
-  //delay(10);
-}
-void motorBackward()
-{
-  Serial.println("Moving Backwards");
-  digitalWrite(motor1Pin1, HIGH);
-  digitalWrite(motor1Pin2, LOW);
-  setLedColor(45, 150, 255);
-}
+// void motorStop()
+// {
+//   Serial.println("Motor stopped");
+//   digitalWrite(motor1Pin1, LOW);
+//   digitalWrite(motor1Pin2, LOW);
+//   setLedColor(247, 120, 138);
+//   //delay(10);
+// }
+// void motorBackward()
+// {
+//   Serial.println("Moving Backwards");
+//   digitalWrite(motor1Pin1, HIGH);
+//   digitalWrite(motor1Pin2, LOW);
+//   setLedColor(45, 150, 255);
+// }
 
-void motorForward()
-{
-  Serial.println("Moving Forward");
-  digitalWrite(motor1Pin1, LOW);
-  digitalWrite(motor1Pin2, HIGH);
-  setLedColor(0, 214, 102);
-}
+// void motorForward()
+// {
+//   Serial.println("Moving Forward");
+//   digitalWrite(motor1Pin1, LOW);
+//   digitalWrite(motor1Pin2, HIGH);
+//   setLedColor(0, 214, 102);
+// }
 
-void setDuty(int dc)
-{
-  JsonVariant doc;
-  //_docMotor = new DynamicJsonDocument(100);
-  ledcWrite(pwmChannel, dc);
-  Serial.println("Received Speed is ");
-  Serial.println(dc);
-  if ((dc == 0) || (curState == 0))
-  {
-    motorStop();
-    tb.sendTelemetryInt("motorst", 0); // motorEdgeSpeed
-    doc["motorEdgeSpeed"]=0;
-    RPC_Response(doc);
-  }
-  else if ((dc > 0) && (curState == 2))
-  {
-    doc["motorEdgeSpeed"]= dc;
-    Serial.println("motorEdgeSpeed: "+ dc);
-    motorBackward();
-    RPC_Response(doc);
-  }
-  else if ((dc > 0) && (curState == 1))
-  {
-    doc["motorEdgeSpeed"]= dc;
-    Serial.println("motorEdgeSpeed: "+ dc);
-    motorForward();
-    RPC_Response(doc);
-  }
-}
+// void setDuty(int dc)
+// {
+//   JsonVariant doc;
+//   //_docMotor = new DynamicJsonDocument(100);
+//   ledcWrite(pwmChannel, dc);
+//   Serial.println("Received Speed is ");
+//   Serial.println(dc);
+//   if ((dc == 0) || (curState == 0))
+//   {
+//     motorStop();
+//     tb.sendTelemetryInt("motorst", 0); // motorEdgeSpeed
+//     doc["motorEdgeSpeed"]=0;
+//     RPC_Response(doc);
+//   }
+//   else if ((dc > 0) && (curState == 2))
+//   {
+//     doc["motorEdgeSpeed"]= dc;
+//     Serial.println("motorEdgeSpeed: "+ dc);
+//     motorBackward();
+//     RPC_Response(doc);
+//   }
+//   else if ((dc > 0) && (curState == 1))
+//   {
+//     doc["motorEdgeSpeed"]= dc;
+//     Serial.println("motorEdgeSpeed: "+ dc);
+//     motorForward();
+//     RPC_Response(doc);
+//   }
+// }
 
 void InitMotors()
 {
@@ -121,7 +125,8 @@ void InitMotors()
 
   // attach the channel to the GPIO to be controlled
   ledcAttachPin(enable1Pin, pwmChannel);
-  setDuty(dutyCycle);
+  motorControl.setDuty(dutyCycle);
+  
   // testing
   Serial.print("Testing DC Motor...");
 }
@@ -237,15 +242,15 @@ RPC_Response processMotorStateChange(const RPC_Data &data)
   switch (nextstate)
   {
   case 0:
-    motorStop();
+    motorControl.motorStop();
     break;
 
   case 1:
-    motorForward();
+    motorControl.motorForward();
     break;
 
   case 2:
-    motorBackward();
+    motorControl.motorBackward();
     break;
 
   default:
@@ -277,7 +282,7 @@ RPC_Response processMotorSpeedChange(const RPC_Data &data)
 
   // Process data
   int speed = data;
-  setDuty(speed);
+  motorControl.setDuty(speed);
   tb.sendTelemetryInt("Speed", (int)speed);
 
   JsonVariant doc;
