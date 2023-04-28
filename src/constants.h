@@ -106,7 +106,7 @@ constexpr std::array<const char *, 1U> CLIENT_ATTRIBUTES_LIST = {
 
 // Motors
 //  Update interval time set to 5 seconds
-const long interval = 5000;
+
 unsigned long previousMillis = 0;
 // Motor A
 int motor1Pin1 = 27;

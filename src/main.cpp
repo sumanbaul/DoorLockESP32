@@ -10,34 +10,13 @@
 
 */
 
-//Initialize variables
+// Initialize class variables
 MotorControl motorControl = MotorControl();
 LedService ledService = LedService();
 WifiService wifiService = WifiService();
+MotorService mService = MotorService();
 
 
-
-
-
-
-
-
-
-void sendDataToThingsBoard()
-{
-
-  // Sending telemetry every telemetrySendInterval time
-  if (millis() - previousDataSend > telemetrySendInterval)
-  {
-    previousDataSend = millis();
-    tb.sendTelemetryInt("temperature", random(10, 20));
-    tb.sendAttributeInt("rssi", WiFi.RSSI());
-    tb.sendAttributeInt("channel", WiFi.channel());
-    tb.sendAttributeString("bssid", WiFi.BSSIDstr().c_str());
-    tb.sendAttributeString("localIp", WiFi.localIP().toString().c_str());
-    tb.sendAttributeString("ssid", WiFi.SSID().c_str());
-  }
-}
 
 /// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
 /// if none are provided we subscribe to any shared attribute change instead
@@ -87,7 +66,6 @@ const Shared_Attribute_Callback attributes_callback(SHARED_ATTRIBUTES_LIST.cbegi
 const Attribute_Request_Callback attribute_shared_request_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
 const Attribute_Request_Callback attribute_client_request_callback(CLIENT_ATTRIBUTES_LIST.cbegin(), CLIENT_ATTRIBUTES_LIST.cend(), &processClientAttributes);
 
-
 /// @brief Processes function for RPC call "setLedMode"
 /// RPC_Data is a JSON variant, that can be queried using operator[]
 /// See https://arduinojson.org/v5/api/jsonvariant/subscript/ for more details
@@ -124,7 +102,7 @@ RPC_Response processSetLedMode(const RPC_Data &data)
 RPC_Response processMotorStateChange(const RPC_Data &data)
 {
   Serial.println("Received the set state RPC method");
-  
+
   int nextstate = data["motorst"];
   Serial.println("RPC Su:");
   Serial.print(nextstate);
@@ -181,7 +159,6 @@ RPC_Response processMotorSpeedChange(const RPC_Data &data)
   return RPC_Response(doc);
 }
 
-
 // Optional, keep subscribed shared attributes empty instead,
 // and the callback will be called for every shared attribute changed on the device,
 // instead of only the one that were entered instead
@@ -229,7 +206,6 @@ void loop()
     tb.sendAttributeString("macAddress", WiFi.macAddress().c_str());
   }
 
-  
   if (!subscribed)
   {
     Serial.println("Subscribing for RPC...");
@@ -289,11 +265,10 @@ void loop()
     if (LEDINBUILT == 99)
     {
       Serial.print("LED state changed to: ");
-      Serial.println(ledState);      
+      Serial.println(ledState);
     }
   }
- 
 
-  sendDataToThingsBoard();
+  mService.sendDataToThingsBoard();
   tb.loop();
 }
