@@ -17,6 +17,7 @@ public:
         pinMode(PIN_GREEN, OUTPUT);
         pinMode(PIN_BLUE, OUTPUT);
         pinMode(LEDINBUILT, OUTPUT);
+        pinMode(LEDRED, OUTPUT);
         // Serial.begin(921600);
     }
 
@@ -25,6 +26,12 @@ public:
         analogWrite(PIN_RED, R);
         analogWrite(PIN_GREEN, G);
         analogWrite(PIN_BLUE, B);
+    }
+
+    void setLedHallSensor(int status)
+    {
+        
+        digitalWrite(LEDRED, status ? HIGH : LOW);
     }
 };
 

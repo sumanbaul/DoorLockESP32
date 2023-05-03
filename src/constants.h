@@ -66,9 +66,13 @@ const int PIN_GREEN = 22;
 const int PIN_RED = 23;
 const int PIN_BLUE = 21;
 const int LEDINBUILT = 2;
+const int LEDRED = 19;
 
 //BUTTON
 #define BUTTON_PIN 12 // the number of the pushbutton pin
+
+//hall sensor
+#define HALL_SENSOR 34
 
 //
 int flag = 0;

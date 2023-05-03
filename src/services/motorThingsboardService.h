@@ -105,7 +105,7 @@ public:
         return RPC_Response(doc);
     }
 
-    static void sendDataToThingsBoard(int curState)
+    static void sendDataToThingsBoard(int curState,int hallSensorStatus = 0)
     {
 
         // Sending telemetry every telemetrySendInterval time
@@ -119,6 +119,7 @@ public:
             tb.sendAttributeString("localIp", WiFi.localIP().toString().c_str());
             tb.sendAttributeString("ssid", WiFi.SSID().c_str());
             tb.sendAttributeInt("motorst", curState);
+            tb.sendAttributeInt("hallsensor", hallSensorStatus);
         }
     }
 };

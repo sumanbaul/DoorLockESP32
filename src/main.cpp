@@ -17,7 +17,6 @@ WifiService wifiService = WifiService();
 MotorService mService = MotorService();
 ezButton button(BUTTON_PIN);
 
-
 /// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
 /// if none are provided we subscribe to any shared attribute change instead
 /// @param data Data containing the shared attributes that were changed and their current value
@@ -176,6 +175,9 @@ void setup()
 
   wifiService.InitWiFi();
   ledService.InitLeds();
+
+  pinMode(HALL_SENSOR, INPUT);
+
   motorControl.~MotorControl();
 }
 
@@ -269,31 +271,43 @@ void loop()
     }
   }
 
+  //button configuration
   button.loop();
-  if (button.isPressed()) {
+  if (button.isPressed())
+  {
 
-    if(curState == 0)
+    if (curState == 0)
     {
       curState = 1;
       motorControl.motorForward();
     }
-    else if(curState == 1)
+    else if (curState == 1)
     {
       curState = 2;
       motorControl.motorBackward();
     }
-    else if(curState == 2)
+    else if (curState == 2)
     {
       curState = 0;
       motorControl.motorStop();
     }
 
     Serial.println("The button is pressed " + button.getCount());
-    
-    
+
     delay(500);
   }
+
+  //hall sensor config
+  int hallSensorStatus = digitalRead(HALL_SENSOR);
+  if (hallSensorStatus == HIGH){
+    ledService.setLedHallSensor(1);
+  } else{
+    ledService.setLedHallSensor(0);
+  }
+
   
-  mService.sendDataToThingsBoard(curState);
+
+  mService.sendDataToThingsBoard(curState, hallSensorStatus);
+  
   tb.loop();
 }
