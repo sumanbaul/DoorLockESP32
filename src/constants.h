@@ -12,7 +12,7 @@
 #include <ThingsBoard.h>
 #include <Arduino.h>
 #include <HTTPClient.h>
-#include <L293D.h>
+#include <ezButton.h>
 
 
 
@@ -61,12 +61,14 @@ constexpr char LED_STATE_ATTR[] = "ledState";
 
 #endif
 
-DynamicJsonDocument* _docMotor;
 // LEDs
 const int PIN_GREEN = 22;
 const int PIN_RED = 23;
 const int PIN_BLUE = 21;
 const int LEDINBUILT = 2;
+
+//BUTTON
+#define BUTTON_PIN 12 // the number of the pushbutton pin
 
 //
 int flag = 0;

@@ -13,31 +13,12 @@ public:
     ~MotorControl();
 
     LedService ledService;
-
-    // void InitMotors()
-    // {
-    //     // sets the pins as outputs:
-    //     pinMode(motor1Pin1, OUTPUT);
-    //     pinMode(motor1Pin2, OUTPUT);
-    //     pinMode(enable1Pin, OUTPUT);
-
-    //     // configure LED PWM functionalitites
-    //     ledcSetup(pwmChannel, freq, resolution);
-
-    //     // attach the channel to the GPIO to be controlled
-    //     ledcAttachPin(enable1Pin, pwmChannel);
-    //     setDuty(dutyCycle);
-
-    //     // testing
-    //     Serial.print("Testing DC Motor...");
-    // }
-
     void motorStop()
     {
         Serial.println("Motor stopped");
         digitalWrite(motor1Pin1, LOW);
         digitalWrite(motor1Pin2, LOW);
-        ledService.setLedColor(247, 120, 138);
+        ledService.setLedColor(252, 0, 0);
         // delay(10);
     }
     void motorBackward()
@@ -45,7 +26,7 @@ public:
         Serial.println("Moving Backwards");
         digitalWrite(motor1Pin1, HIGH);
         digitalWrite(motor1Pin2, LOW);
-        ledService.setLedColor(45, 150, 255);
+        ledService.setLedColor(3, 11, 255);
     }
 
     void motorForward()
@@ -53,7 +34,7 @@ public:
         Serial.println("Moving Forward");
         digitalWrite(motor1Pin1, LOW);
         digitalWrite(motor1Pin2, HIGH);
-        ledService.setLedColor(0, 214, 102);
+        ledService.setLedColor(0, 150, 5);
     }
 
     void setDuty(int dc)
@@ -93,22 +74,21 @@ MotorControl::MotorControl(/* args */)
 
 MotorControl::~MotorControl()
 {
-    
-        // sets the pins as outputs:
-        pinMode(motor1Pin1, OUTPUT);
-        pinMode(motor1Pin2, OUTPUT);
-        pinMode(enable1Pin, OUTPUT);
 
-        // configure LED PWM functionalitites
-        ledcSetup(pwmChannel, freq, resolution);
+    // sets the pins as outputs:
+    pinMode(motor1Pin1, OUTPUT);
+    pinMode(motor1Pin2, OUTPUT);
+    pinMode(enable1Pin, OUTPUT);
 
-        // attach the channel to the GPIO to be controlled
-        ledcAttachPin(enable1Pin, pwmChannel);
-        setDuty(dutyCycle);
+    // configure LED PWM functionalitites
+    ledcSetup(pwmChannel, freq, resolution);
 
-        // testing
-        Serial.print("Testing DC Motor...");
-   
+    // attach the channel to the GPIO to be controlled
+    ledcAttachPin(enable1Pin, pwmChannel);
+    setDuty(dutyCycle);
+
+    // testing
+    Serial.print("Testing DC Motor...");
 }
 
 #endif

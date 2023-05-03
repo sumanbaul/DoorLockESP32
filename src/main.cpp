@@ -15,7 +15,7 @@ MotorControl motorControl = MotorControl();
 LedService ledService = LedService();
 WifiService wifiService = WifiService();
 MotorService mService = MotorService();
-
+ezButton button(BUTTON_PIN);
 
 
 /// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
@@ -129,7 +129,7 @@ RPC_Response processMotorStateChange(const RPC_Data &data)
   tb.sendTelemetryInt("motorst", nextstate);
   if (nextstate == 0)
   {
-    curState = 1;
+    curState = 0;
   }
   else
   {
@@ -269,6 +269,31 @@ void loop()
     }
   }
 
-  mService.sendDataToThingsBoard();
+  button.loop();
+  if (button.isPressed()) {
+
+    if(curState == 0)
+    {
+      curState = 1;
+      motorControl.motorForward();
+    }
+    else if(curState == 1)
+    {
+      curState = 2;
+      motorControl.motorBackward();
+    }
+    else if(curState == 2)
+    {
+      curState = 0;
+      motorControl.motorStop();
+    }
+
+    Serial.println("The button is pressed " + button.getCount());
+    
+    
+    delay(500);
+  }
+  
+  mService.sendDataToThingsBoard(curState);
   tb.loop();
 }
