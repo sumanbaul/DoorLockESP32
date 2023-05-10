@@ -4,7 +4,7 @@
 #include "constants.h"
 #include "services/motorControlService.h"
 
-class buttonControlService
+class ButtonControlService
 {
 private:
 public:

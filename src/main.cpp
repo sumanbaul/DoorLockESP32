@@ -2,6 +2,7 @@
 #include "services/motorThingsboardService.h"
 #include "services/motorControlService.h"
 #include "services/wifiService.h"
+#include "services/thingsboardService.h"
 #include "services/buttonControlService.h"
 /*
 
@@ -16,7 +17,8 @@ MotorControl motorControl = MotorControl();
 LedService ledService = LedService();
 WifiService wifiService = WifiService();
 MotorService mService = MotorService();
-buttonControlService buttonService = buttonControlService();
+ButtonControlService buttonService = ButtonControlService();
+ThingsboardService tbService = ThingsboardService();
 ezButton pushButton(PUSH_BUTTON);
 
 
@@ -195,72 +197,8 @@ void loop()
     subscribed = false;
     wifiService.reconnectWifi();
   }
-  
-  if (!tb.connected())
-  {
-    subscribed = false;
-    // Connect to the ThingsBoard
-    Serial.print("Connecting to: ");
-    Serial.print(THINGSBOARD_SERVER);
-    Serial.print(" with token ");
-    Serial.println(TOKEN);
-    if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) // THINGSBOARD_PORT))
-    {
-      Serial.println("Failed to connect");
-      return;
-    }
-    // Sending a MAC address as an attribute
-    tb.sendAttributeString("macAddress", WiFi.macAddress().c_str());
-  }
 
-  if (!subscribed)
-  {
-    Serial.println("Subscribing for RPC...");
-    // Perform a subscription. All consequent data processing will happen in
-    // processSetLedState() and processSetLedMode() functions,
-    // as denoted by callbacks array.
-    if (!tb.RPC_Subscribe(callbacks.cbegin(), callbacks.cend()))
-    {
-      Serial.println("Failed to subscribe for RPC");
-      return;
-    }
-
-    if (!tb.Shared_Attributes_Subscribe(attributes_callback))
-    {
-      Serial.println("Failed to subscribe for shared attribute updates");
-      return;
-    }
-
-    // Request current states of shared attributes
-    if (!tb.Shared_Attributes_Request(attribute_shared_request_callback))
-    {
-      Serial.println("Failed to request for shared attributes");
-      return;
-    }
-
-    // Request current states of client attributes
-    if (!tb.Client_Attributes_Request(attribute_client_request_callback))
-    {
-      Serial.println("Failed to request for client attributes");
-      return;
-    }
-
-    Serial.println("Subscribe done");
-    subscribed = true;
-  }
-
-  if (attributesChanged)
-  {
-    attributesChanged = false;
-    if (ledMode == 0)
-    {
-      previousStateChange = millis();
-    }
-    tb.sendTelemetryInt(LED_MODE_ATTR, ledMode);
-    tb.sendTelemetryBool(LED_STATE_ATTR, ledState);
-    tb.sendAttributeInt(LED_MODE_ATTR, ledMode);
-    tb.sendAttributeBool(LED_STATE_ATTR, ledState);
-  }
+  tbService.InitThingsboardService(callbacks, attributes_callback, attribute_shared_request_callback, attribute_client_request_callback);
 
   if (ledMode == 1 && millis() - previousStateChange > blinkingInterval)
   {
