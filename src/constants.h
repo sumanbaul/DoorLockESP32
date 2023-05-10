@@ -69,7 +69,7 @@ const int LEDINBUILT = 2;
 const int LEDRED = 19;
 
 //BUTTON
-#define BUTTON_PIN 12 // the number of the pushbutton pin
+#define PUSH_BUTTON 12 // the number of the pushbutton pin
 
 //hall sensor
 #define HALL_SENSOR 34

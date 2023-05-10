@@ -2,6 +2,7 @@
 #include "services/motorThingsboardService.h"
 #include "services/motorControlService.h"
 #include "services/wifiService.h"
+#include "services/buttonControlService.h"
 /*
 
   Project: Main door lock
@@ -15,7 +16,9 @@ MotorControl motorControl = MotorControl();
 LedService ledService = LedService();
 WifiService wifiService = WifiService();
 MotorService mService = MotorService();
-ezButton button(BUTTON_PIN);
+buttonControlService buttonService = buttonControlService();
+ezButton pushButton(PUSH_BUTTON);
+
 
 /// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
 /// if none are provided we subscribe to any shared attribute change instead
@@ -183,14 +186,16 @@ void setup()
 
 void loop()
 {
+  // button configuration
+  pushButton.loop();
+  buttonService.InitButton(pushButton);
+
   if (WiFi.status() != WL_CONNECTED)
   {
     subscribed = false;
     wifiService.reconnectWifi();
   }
-
-  // Serial.println(WiFi.status());
-
+  
   if (!tb.connected())
   {
     subscribed = false;
@@ -271,43 +276,18 @@ void loop()
     }
   }
 
-  //button configuration
-  button.loop();
-  if (button.isPressed())
-  {
-
-    if (curState == 0)
-    {
-      curState = 1;
-      motorControl.motorForward();
-    }
-    else if (curState == 1)
-    {
-      curState = 2;
-      motorControl.motorBackward();
-    }
-    else if (curState == 2)
-    {
-      curState = 0;
-      motorControl.motorStop();
-    }
-
-    Serial.println("The button is pressed " + button.getCount());
-
-    delay(500);
-  }
-
-  //hall sensor config
+  // hall sensor config
   int hallSensorStatus = digitalRead(HALL_SENSOR);
-  if (hallSensorStatus == HIGH){
+  if (hallSensorStatus == HIGH)
+  {
     ledService.setLedHallSensor(1);
-  } else{
+  }
+  else
+  {
     ledService.setLedHallSensor(0);
   }
 
-  
-
   mService.sendDataToThingsBoard(curState, hallSensorStatus);
-  
+
   tb.loop();
 }

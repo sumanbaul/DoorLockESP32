@@ -7,19 +7,13 @@ class WifiService
 private:
     /* data */
 public:
-    WifiService(/* args */);
-    ~WifiService();
+    unsigned long previousMillis = 0;
+    const long interval = 30000; // interval at which to attempt reconnection (milliseconds)
 
     void InitWiFi()
     {
-        Serial.println("Connecting");
-
+        Serial.println("Connecting to WiFi");
         WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-        while (WiFi.status() != WL_CONNECTED)
-        {
-            delay(500);
-            Serial.print(".");
-        }
         Serial.println("");
         Serial.print("Connected to WiFi network with IP Address: ");
         Serial.println(WiFi.localIP());
@@ -27,27 +21,18 @@ public:
 
     void reconnectWifi()
     {
-        // Loop until we're reconnected
-        status = WiFi.status();
-        if (status != WL_CONNECTED)
+        unsigned long currentMillis = millis();
+        if (currentMillis - previousMillis >= interval)
         {
-            WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-            while (WiFi.status() != WL_CONNECTED)
+            previousMillis = currentMillis;
+            if (WiFi.status() != WL_CONNECTED)
             {
-                delay(500);
-                Serial.print(".");
+                Serial.println("Attempting to reconnect to WiFi");
+                WiFi.disconnect();
+                WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
             }
-            Serial.println("Connected to AP");
         }
     }
 };
-
-WifiService::WifiService(/* args */)
-{
-}
-
-WifiService::~WifiService()
-{
-}
 
 #endif
