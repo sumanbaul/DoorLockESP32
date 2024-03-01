@@ -75,7 +75,7 @@ const int LEDRED = 19;
 #define HALL_SENSOR 34
 
 //
-int flag = 0;
+int isLocked = 0;
 
 // Statuses for subscribing to rpc
 bool subscribed = false;
@@ -83,6 +83,7 @@ bool subscribed = false;
 volatile bool attributesChanged = false;
 // LED modes: 0 - continious state, 1 - blinking
 int ledMode = 0;
+int motorSt = 0;
 // Current led state
 volatile bool ledState = false;
 

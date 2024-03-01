@@ -108,6 +108,7 @@ RPC_Response processMotorStateChange(const RPC_Data &data)
   Serial.println("Received the set state RPC method");
 
   int nextstate = data["motorst"];
+  motorSt = nextstate;
   Serial.println("RPC Su:");
   Serial.print(nextstate);
   switch (nextstate)
@@ -169,7 +170,48 @@ RPC_Response processMotorSpeedChange(const RPC_Data &data)
 const std::array<RPC_Callback, callbacks_size> callbacks = {
     RPC_Callback{"setLedMode", processSetLedMode},
     RPC_Callback{"motorState", processMotorStateChange},
-    RPC_Callback{"motorSpeed", processMotorSpeedChange}};
+    RPC_Callback{"motorSpeed", processMotorSpeedChange}
+  };
+
+void defaultMotorStateChange()
+{
+  //Serial.println("Received the set state RPC method");
+
+  motorSt = curState;
+  
+  Serial.println("Default Motor State");
+  Serial.print(curState);
+  switch (curState)
+  {
+  case 0:
+    motorControl.motorStop();
+    break;
+
+  case 1:
+    motorControl.motorForward();
+    break;
+
+  case 2:
+    motorControl.motorBackward();
+    break;
+
+  default:
+    Serial.println("Invalid RPC");
+  }
+  Serial.println("Current state");
+  Serial.println(curState);
+
+ // tb.sendTelemetryInt("motorst", nextstate);
+  if (motorSt == 0)
+  {
+    curState = 0;
+  }
+  else
+  {
+    curState = motorSt;
+  }
+}
+  
 
 void setup()
 {
@@ -198,7 +240,8 @@ void loop()
     wifiService.reconnectWifi();
   }
 
-  tbService.InitThingsboardService(callbacks, attributes_callback, attribute_shared_request_callback, attribute_client_request_callback);
+  int thingsBoardCheck = tbService.InitThingsboardService(callbacks, attributes_callback, attribute_shared_request_callback, attribute_client_request_callback);
+
 
   if (ledMode == 1 && millis() - previousStateChange > blinkingInterval)
   {
@@ -227,5 +270,10 @@ void loop()
 
   mService.sendDataToThingsBoard(curState, hallSensorStatus);
 
-  tb.loop();
+  if(thingsBoardCheck == 1){
+    tb.loop();
+  }
+  else {
+    defaultMotorStateChange();
+  }
 }

@@ -11,7 +11,7 @@ public:
     ThingsboardService(/* args */);
     ~ThingsboardService();
 
-    void InitThingsboardService(std::array<RPC_Callback, callbacks_size> callbacks, Shared_Attribute_Callback attributes_callback, Attribute_Request_Callback attribute_shared_request_callback, Attribute_Request_Callback attribute_client_request_callback)
+    int InitThingsboardService(std::array<RPC_Callback, callbacks_size> callbacks, Shared_Attribute_Callback attributes_callback, Attribute_Request_Callback attribute_shared_request_callback, Attribute_Request_Callback attribute_client_request_callback)
     {
 
         if (!tb.connected())
@@ -25,7 +25,8 @@ public:
             if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) // THINGSBOARD_PORT))
             {
                 Serial.println("Failed to connect");
-                return;
+
+                return 0;
             }
             // Sending a MAC address as an attribute
             tb.sendAttributeString("macAddress", WiFi.macAddress().c_str());
@@ -40,27 +41,27 @@ public:
             if (!tb.RPC_Subscribe(callbacks.cbegin(), callbacks.cend()))
             {
                 Serial.println("Failed to subscribe for RPC");
-                return;
+                return 0;
             }
 
             if (!tb.Shared_Attributes_Subscribe(attributes_callback))
             {
                 Serial.println("Failed to subscribe for shared attribute updates");
-                return;
+                return 0;
             }
 
             // Request current states of shared attributes
             if (!tb.Shared_Attributes_Request(attribute_shared_request_callback))
             {
                 Serial.println("Failed to request for shared attributes");
-                return;
+                return 0;
             }
 
             // Request current states of client attributes
             if (!tb.Client_Attributes_Request(attribute_client_request_callback))
             {
                 Serial.println("Failed to request for client attributes");
-                return;
+                return 0;
             }
 
             Serial.println("Subscribe done");
@@ -93,6 +94,7 @@ public:
         //         Serial.println(ledState);
         //     }
         // }
+        return 1;
     }
 };
 
