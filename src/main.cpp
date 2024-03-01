@@ -1,210 +1,279 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include <WiFiClientSecure.h>
-#include <Arduino_JSON.h>
- 
-//wifi configs
-const char* ssid = "Home wifi";
-const char* password = "1123581321";
-const char* serverName = "https://automation.mindflo.in/esp-outputs-action.php?action=outputs_state&board=1";
+#include "constants.h"
+#include "services/motorThingsboardService.h"
+#include "services/motorControlService.h"
+#include "services/wifiService.h"
+#include "services/thingsboardService.h"
+#include "services/buttonControlService.h"
+/*
 
-// Update interval time set to 5 seconds
-const long interval = 5000;
-unsigned long previousMillis = 0;
+  Project: Main door lock
+  Desc: Controlling DC motor with ESP 32 and L293D motor driver
+  Developer: Suman Baul
 
+*/
 
-const int PIN_GREEN  = 22;
-const int  PIN_RED = 23;
-const int PIN_BLUE = 21;
-
-const int LEDINBUILT = 2;
-
-// Motor A
-int motor1Pin1 = 27; 
-int motor1Pin2 = 26; 
-int enable1Pin = 14; 
+// Initialize class variables
+MotorControl motorControl = MotorControl();
+LedService ledService = LedService();
+WifiService wifiService = WifiService();
+MotorService mService = MotorService();
+ButtonControlService buttonService = ButtonControlService();
+ThingsboardService tbService = ThingsboardService();
+ezButton pushButton(PUSH_BUTTON);
 
 
-// Setting PWM properties
-const int freq = 30000;
-const int pwmChannel = 0;
-const int resolution = 8;
-int dutyCycle = 200;
-
-
-void setup() {
-   Serial.begin(115200);
-  
-  WiFi.begin(ssid, password);
-  Serial.println("Connecting");
-  while(WiFi.status() != WL_CONNECTED) { 
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to WiFi network with IP Address: ");
-  Serial.println(WiFi.localIP());
-
-
-   pinMode(PIN_RED, OUTPUT);
-   pinMode(PIN_GREEN, OUTPUT);
-   pinMode(PIN_BLUE, OUTPUT);
-  pinMode(LEDINBUILT, OUTPUT);
- // Serial.begin(921600);
-
-
-  // sets the pins as outputs:
-  pinMode(motor1Pin1, OUTPUT);
-  pinMode(motor1Pin2, OUTPUT);
-  pinMode(enable1Pin, OUTPUT);
-  
-  // configure LED PWM functionalitites
-  ledcSetup(pwmChannel, freq, resolution);
-  
-  // attach the channel to the GPIO to be controlled
-  ledcAttachPin(enable1Pin, pwmChannel);
-
-  // testing
-  Serial.print("Testing DC Motor...");
-}
-
-void setColor(int R, int G, int B) {
-  analogWrite(PIN_RED,   R);
-  analogWrite(PIN_GREEN, G);
-  analogWrite(PIN_BLUE,  B);
-}
-
-void loop() {
-  //blue
-  setColor(0, 214, 102);
-
-  // Move the DC motor forward at maximum speed
-  Serial.println("Moving Forward");
-  digitalWrite(motor1Pin1, LOW);
-  digitalWrite(motor1Pin2, HIGH); 
-
-  //LEDs
-  digitalWrite(LEDINBUILT, HIGH);
-  delay(2000);
-
-  // Stop the DC motor
-  Serial.println("Motor stopped");
-  
-  //red
-  setColor(247, 120, 138);
-  digitalWrite(motor1Pin1, LOW);
-  digitalWrite(motor1Pin2, LOW);
-
-
-  delay(2000);
-
-  // Move DC motor backwards at maximum speed
-  //yellow
-  setColor(255, 227, 22);
-  Serial.println("Moving Backwards");
-  digitalWrite(motor1Pin1, HIGH);
-  digitalWrite(motor1Pin2, LOW); 
-
-  
-
-  delay(2000);
-
-
-    //red
-  setColor(247, 120, 138);
-  // Stop the DC motor
-  Serial.println("Motor stopped");
-  digitalWrite(motor1Pin1, LOW);
-  digitalWrite(motor1Pin2, LOW);
-
-  delay(2000);
-  digitalWrite(LEDINBUILT, LOW);
-  
-  //green
-  setColor(62, 214, 102);
-  // Move DC motor forward with increasing speed
-  digitalWrite(motor1Pin1, HIGH);
-  digitalWrite(motor1Pin2, LOW);
-  while (dutyCycle <= 255){
-    ledcWrite(pwmChannel, dutyCycle);   
-    Serial.print("Forward with duty cycle: ");
-    Serial.println(dutyCycle);
-    //green
-  setColor(62, 214, 102);
-    dutyCycle = dutyCycle + 5;
-    delay(500);
-  }
-  dutyCycle = 200;
-  //yellow
-  setColor(255, 227, 22);
-  delay(500);
-}
-
-String httpGETRequest(const char* serverName) {
-  WiFiClientSecure *client = new WiFiClientSecure;
-  
-  unsigned long currentMillis = millis();
-  String outputsState;
-  
-  if(currentMillis - previousMillis >= interval) {
-     // Check WiFi connection status
-    if(WiFi.status()== WL_CONNECTED ){ 
-      outputsState = httpGETRequest(serverName);
-      Serial.println(outputsState);
-      JSONVar myObject = JSON.parse(outputsState);
-  
-      // JSON.typeof(jsonVar) can be used to get the type of the var
-      if (JSON.typeof(myObject) == "undefined") {
-        Serial.println("Parsing input failed!");
-        return "";
+/// @brief Update callback that will be called as soon as one of the provided shared attributes changes value,
+/// if none are provided we subscribe to any shared attribute change instead
+/// @param data Data containing the shared attributes that were changed and their current value
+void processSharedAttributes(const Shared_Attribute_Data &data)
+{
+  for (auto it = data.begin(); it != data.end(); ++it)
+  {
+    if (strcmp(it->key().c_str(), BLINKING_INTERVAL_ATTR) == 0)
+    {
+      const uint16_t new_interval = it->value().as<uint16_t>();
+      if (new_interval >= BLINKING_INTERVAL_MS_MIN && new_interval <= BLINKING_INTERVAL_MS_MAX)
+      {
+        blinkingInterval = new_interval;
+        Serial.print("Updated blinking interval to: ");
+        Serial.println(new_interval);
       }
-    
-      Serial.print("JSON object = ");
-      Serial.println(myObject);
-    
-      // myObject.keys() can be used to get an array of all the keys in the object
-      JSONVar keys = myObject.keys();
-    
-      for (int i = 0; i < keys.length(); i++) {
-        JSONVar value = myObject[keys[i]];
-        Serial.print("GPIO: ");
-        Serial.print(keys[i]);
-        Serial.print(" - SET to: ");
-        Serial.println(value);
-        pinMode(atoi(keys[i]), OUTPUT);
-        digitalWrite(atoi(keys[i]), atoi(value));
-      }
-      // save the last HTTP GET Request
-      previousMillis = currentMillis;
     }
-    else {
-      Serial.println("WiFi Disconnected");
+    else if (strcmp(it->key().c_str(), LED_STATE_ATTR) == 0)
+    {
+      ledState = it->value().as<bool>();
+      digitalWrite(LEDINBUILT, ledState ? HIGH : LOW);
+      // digitalWrite(PIN_GREEN, ledState ? HIGH : LOW);
+      // digitalWrite(PIN_BLUE, !ledState ? HIGH : LOW);
+      // digitalWrite(PIN_RED, ledState ? HIGH : LOW);
+
+      Serial.print("Updated state to: ");
+      Serial.println(ledState);
     }
   }
-  // set secure client without certificate
-  client->setInsecure();
-  HTTPClient https;
-    
-  // Your IP address with path or Domain name with URL path 
-  https.begin(*client, serverName);
+  attributesChanged = true;
+}
+
+void processClientAttributes(const Shared_Attribute_Data &data)
+{
+  for (auto it = data.begin(); it != data.end(); ++it)
+  {
+    if (strcmp(it->key().c_str(), LED_MODE_ATTR) == 0)
+    {
+      const uint16_t new_mode = it->value().as<uint16_t>();
+      ledMode = new_mode;
+    }
+  }
+}
+
+const Shared_Attribute_Callback attributes_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
+const Attribute_Request_Callback attribute_shared_request_callback(SHARED_ATTRIBUTES_LIST.cbegin(), SHARED_ATTRIBUTES_LIST.cend(), &processSharedAttributes);
+const Attribute_Request_Callback attribute_client_request_callback(CLIENT_ATTRIBUTES_LIST.cbegin(), CLIENT_ATTRIBUTES_LIST.cend(), &processClientAttributes);
+
+/// @brief Processes function for RPC call "setLedMode"
+/// RPC_Data is a JSON variant, that can be queried using operator[]
+/// See https://arduinojson.org/v5/api/jsonvariant/subscript/ for more details
+/// @param data Data containing the rpc data that was called and its current value
+/// @return Response that should be sent to the cloud. Useful for getMethods
+RPC_Response processSetLedMode(const RPC_Data &data)
+{
+  Serial.println("Received the set led state RPC method");
+
+  // Process data
+  int new_mode = data;
+
+  Serial.print("Mode to change: ");
+  Serial.println(new_mode);
+
+  if (new_mode != 0 && new_mode != 1)
+  {
+    JsonVariant doc;
+    doc["error"] = "Unknown mode!";
+    return RPC_Response(doc);
+  }
+
+  ledMode = new_mode;
+
+  attributesChanged = true;
+
+  // Returning current mode
+  JsonVariant doc;
+  doc["newMode"] = (int)ledMode;
+  Serial.println("NEW MODE SUMAN");
+  return RPC_Response(doc);
+}
+
+RPC_Response processMotorStateChange(const RPC_Data &data)
+{
+  Serial.println("Received the set state RPC method");
+
+  int nextstate = data["motorst"];
+  motorSt = nextstate;
+  Serial.println("RPC Su:");
+  Serial.print(nextstate);
+  switch (nextstate)
+  {
+  case 0:
+    motorControl.motorStop();
+    break;
+
+  case 1:
+    motorControl.motorForward();
+    break;
+
+  case 2:
+    motorControl.motorBackward();
+    break;
+
+  default:
+    Serial.println("Invalid RPC");
+  }
+  Serial.println("Current state");
+  Serial.println(nextstate);
+
+  tb.sendTelemetryInt("motorst", nextstate);
+  if (nextstate == 0)
+  {
+    curState = 0;
+  }
+  else
+  {
+    curState = nextstate;
+  }
+
+  JsonVariant doc;
+  doc["motorst"] = (int)curState;
+  Serial.println("Motor state");
+  Serial.print(curState);
+  return RPC_Response(doc);
+}
+
+RPC_Response processMotorSpeedChange(const RPC_Data &data)
+{
+  Serial.println("Received the set speed method");
+
+  // Process data
+  int speed = data;
+  motorControl.setDuty(speed);
+  tb.sendTelemetryInt("Speed", (int)speed);
+
+  JsonVariant doc;
+  doc["motorEdgeSpeed"] = (int)speed;
+  Serial.println("Speed is:");
+  Serial.print(speed);
+  return RPC_Response(doc);
+}
+
+// Optional, keep subscribed shared attributes empty instead,
+// and the callback will be called for every shared attribute changed on the device,
+// instead of only the one that were entered instead
+const std::array<RPC_Callback, callbacks_size> callbacks = {
+    RPC_Callback{"setLedMode", processSetLedMode},
+    RPC_Callback{"motorState", processMotorStateChange},
+    RPC_Callback{"motorSpeed", processMotorSpeedChange}
+  };
+
+void defaultMotorStateChange()
+{
+  //Serial.println("Received the set state RPC method");
+
+  motorSt = curState;
   
-  // Send HTTP POST request
-  int httpResponseCode = https.GET();
+  Serial.println("Default Motor State");
+  Serial.print(curState);
+  switch (curState)
+  {
+  case 0:
+    motorControl.motorStop();
+    break;
+
+  case 1:
+    motorControl.motorForward();
+    break;
+
+  case 2:
+    motorControl.motorBackward();
+    break;
+
+  default:
+    Serial.println("Invalid RPC");
+  }
+  Serial.println("Current state");
+  Serial.println(curState);
+
+ // tb.sendTelemetryInt("motorst", nextstate);
+  if (motorSt == 0)
+  {
+    curState = 0;
+  }
+  else
+  {
+    curState = motorSt;
+  }
+}
   
-  String payload = "{}"; 
-  
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    payload = https.getString();
+
+void setup()
+{
+  // Increase internal buffer size after inital creation.
+  tb.setBufferSize(128);
+  Serial.begin(115200);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  wifiService.InitWiFi();
+  ledService.InitLeds();
+
+  pinMode(HALL_SENSOR, INPUT);
+
+  motorControl.~MotorControl();
+}
+
+void loop()
+{
+  // button configuration
+  pushButton.loop();
+  buttonService.InitButton(pushButton);
+
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    subscribed = false;
+    wifiService.reconnectWifi();
+  }
+
+  int thingsBoardCheck = tbService.InitThingsboardService(callbacks, attributes_callback, attribute_shared_request_callback, attribute_client_request_callback);
+
+
+  if (ledMode == 1 && millis() - previousStateChange > blinkingInterval)
+  {
+    previousStateChange = millis();
+    ledState = !ledState;
+    digitalWrite(LEDINBUILT, ledState);
+    tb.sendTelemetryBool(LED_STATE_ATTR, ledState);
+    tb.sendAttributeBool(LED_STATE_ATTR, ledState);
+    if (LEDINBUILT == 99)
+    {
+      Serial.print("LED state changed to: ");
+      Serial.println(ledState);
+    }
+  }
+
+  // hall sensor config
+  int hallSensorStatus = digitalRead(HALL_SENSOR);
+  if (hallSensorStatus == HIGH)
+  {
+    ledService.setLedHallSensor(1);
+  }
+  else
+  {
+    ledService.setLedHallSensor(0);
+  }
+
+  mService.sendDataToThingsBoard(curState, hallSensorStatus);
+
+  if(thingsBoardCheck == 1){
+    tb.loop();
   }
   else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
+    defaultMotorStateChange();
   }
-  // Free resources
-  https.end();
-
-  return payload;
 }
